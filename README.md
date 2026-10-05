@@ -39,6 +39,20 @@ R2:                   Mac: salvestaja ──▶ Cloudflare R2 ◀── Cloudfla
 
 **Autos (Android Auto, CarPlay).** „Minu saated“ → **Podcast** → lülita sisse ja lisa aadress podcastirakendusse: **AntennaPod** (Android) või **Apple Podcasts** (iPhone). Rakendus laeb salvestused telefoni, autos kuulad neid nagu podcaste. Feedi aadressis on salajane võti (`config.json` → `feed_token`), mis avab ainult salvestused; võtit saab vahetada. Ära kasuta Pocket Castsi ega Overcasti – need loevad feede oma serverite kaudu.
 
+<details><summary><b>AntennaPod lühidalt</b> (Android, Android Auto)</summary>
+
+1. Paigalda [AntennaPod](https://antennapod.org) (Google Play või F-Droid).
+2. Raadiosalvestaja lehel: **Minu saated → Podcast → Kopeeri** (kõik salvestused või üks saade).
+3. AntennaPodis: **＋ (Lisa podcast) → „Lisa podcast RSS-aadressiga“** → kleebi aadress → **Telli**.
+4. **Seaded → Allalaadimised:**
+   - **Automaatne allalaadimine** sees, **ainult Wi-Fi-s** (soovi korral Wi-Fi filtriga ainult koduvõrk)
+   - **Uuendamise intervall** nt iga tund – tunniosad jõuavad telefoni peaaegu kohe
+   - **Episoodide kustutamine** „pärast kuulamist“, et telefon täis ei saaks
+5. Autos: Android Auto → AntennaPod – allalaaditud salvestused mängivad ka ilma võrguta.
+
+Kohalikus režiimis uuendab AntennaPod ainult siis, kui telefon arvuti aadressini ulatub (koduvõrk või Tailscale); mujal kuulad juba allalaaditut.
+</details>
+
 ## Paigaldus
 
 Vaja: macOS või Windows 10/11 arvuti, mis on pidevalt sees.
