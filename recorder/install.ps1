@@ -65,8 +65,13 @@ if (-not (Test-Path $Conf)) {
     if (-not $env:RAADIO_NONINTERACTIVE) { Start-Process notepad $Conf }
     exit 0
   }
+  Write-Host ""
+  Write-Host "Veebilehe sisselogimine (telefonis küsitakse kasutajanime ja parooli):"
+  $user = $env:RAADIO_USER
+  if (-not $user) { $user = Ask "  Kasutajanimi [raadio]" "raadio" }
+  Set-ConfLine "WEB_USER" $user
   $pass = $env:RAADIO_PASS
-  if (-not $pass) { $pass = Ask "Veebilehe parool (soovitatav, tühi = ilma)" "" }
+  if (-not $pass) { $pass = Ask "  Parool (soovitatav, tühi = ilma parooliga)" "" }
   if ($pass) { Set-ConfLine "WEB_PASS" $pass }
 }
 Set-ConfLine "FFMPEG" $ffmpeg
@@ -119,7 +124,10 @@ if ($u -like "http*") {
   $ct = [System.IO.File]::ReadAllText($Conf, $Utf8)
   if ($ct -match "(?m)^WEB_PASS=.+") {
     $user = if ($ct -match "(?m)^WEB_USER=(.+)$") { $Matches[1].Trim() } else { "raadio" }
-    Write-Host "  Kasutajanimi: $user   Parool: see, mille just sisestasid"
+    Write-Host "  Kasutajanimi: $user   Parool: see, mille sisestasid"
+  } else {
+    Write-Host "  (parool puudub - lehele pääseb igaüks samas võrgus)"
   }
 }
-Write-Host "  Olek: raadio   (uues terminaliaknas)"
+Write-Host ""
+Write-Host "  Salvestaja oleku vaatamiseks ava uus PowerShelli aken ja kirjuta: raadio"

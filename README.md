@@ -55,7 +55,7 @@ irm https://raadio.mastering.ee/install.ps1 | iex
 
 Paigaldaja paigaldab vajadusel ffmpeg-i ja Pythoni (macOS: Homebrew, Windows: winget), laeb tööriista alla ja küsib, kas hoida salvestused arvutis või Cloudflare R2-s. Käsitsi: `git clone https://github.com/pilvre/raadio.git && cd raadio/recorder && ./install.sh` (Windowsis `install.ps1`).
 
-Paigaldaja näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Kasutajanimi on `raadio` (muudetav: `WEB_USER` seadete failis), parool see, mille paigaldajale andsid. Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
+Paigaldaja näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille paigaldajale andsid (vaikimisi kasutajanimi `raadio`; muudetav seadete failis: `WEB_USER`, `WEB_PASS`). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
 
 Windowsis: luba paigaldajal lisada tulemüüri reegel (muidu telefon lehte ei näe) ja hoia arvuti ärkvel.
 

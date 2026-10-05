@@ -21,6 +21,7 @@ jobs:
           RAADIO_NONINTERACTIVE: "1"
           RAADIO_MODE: local
           RAADIO_PASS: test
+          RAADIO_USER: raadio
         run: |
           $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
           ./site/install.ps1
@@ -69,6 +70,7 @@ jobs:
           RAADIO_NONINTERACTIVE: "1"
           RAADIO_MODE: local
           RAADIO_PASS: test
+          RAADIO_USER: raadio
         run: zsh site/install
       - name: Teenus ja veebileht
         run: |

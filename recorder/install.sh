@@ -37,9 +37,14 @@ if [ ! -f "$CONF" ]; then
     [ -z "$RAADIO_NONINTERACTIVE" ] && open -e "$CONF" 2>/dev/null || true
     exit 0
   fi
-  pass="$RAADIO_PASS"; [ -z "$pass" ] && ask pass "Veebilehe parool (soovitatav, tühi = ilma): " ""
-  # parool võib sisaldada erimärke -> mitte sed-iga
-  [ -n "$pass" ] && PASS="$pass" python3 -c 'import os,re,sys;p=sys.argv[1];s=open(p).read();open(p,"w").write(re.sub(r"(?m)^WEB_PASS=.*$",lambda m:"WEB_PASS="+os.environ["PASS"],s))' "$CONF"
+  echo
+  echo "Veebilehe sisselogimine (telefonis küsitakse kasutajanime ja parooli):"
+  user="$RAADIO_USER"; [ -z "$user" ] && ask user "  Kasutajanimi [raadio]: " raadio
+  pass="$RAADIO_PASS"; [ -z "$pass" ] && ask pass "  Parool (soovitatav, tühi = ilma parooliga): " ""
+  # võivad sisaldada erimärke -> mitte sed-iga
+  setconf() { VAL="$2" python3 -c 'import os,re,sys;p,k=sys.argv[1:3];s=open(p).read();open(p,"w").write(re.sub(r"(?m)^"+k+"=.*$",lambda m:k+"="+os.environ["VAL"],s))' "$CONF" "$1"; }
+  setconf WEB_USER "${user:-raadio}"
+  if [ -n "$pass" ]; then setconf WEB_PASS "$pass"; fi
 fi
 if grep -q "^STORAGE=r2" "$CONF" && ! grep -q "^R2_SECRET_ACCESS_KEY=..*" "$CONF"; then
   echo "Täida R2 andmed failis $CONF"; exit 1
@@ -84,7 +89,10 @@ u=$("$DIR/.venv/bin/python" "$DIR/raadio.py" url)
 case "$u" in http*)
   echo "  Ava telefonis (samas Wi-Fi võrgus): $u"
   if grep -q "^WEB_PASS=..*" "$CONF"; then
-    echo "  Kasutajanimi: $(grep '^WEB_USER=' "$CONF" | cut -d= -f2- | grep . || echo raadio)   Parool: see, mille just sisestasid"
+    echo "  Kasutajanimi: $(grep '^WEB_USER=' "$CONF" | cut -d= -f2- | grep . || echo raadio)   Parool: see, mille sisestasid"
+  else
+    echo "  (parool puudub – lehele pääseb igaüks samas võrgus)"
   fi;;
 esac
-echo "  Olek: raadio"
+echo
+echo "  Salvestaja oleku vaatamiseks ava uus Terminali aken ja kirjuta: raadio"
