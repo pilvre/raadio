@@ -81,5 +81,10 @@ sleep 4
 echo
 echo "✓ Valmis."
 u=$("$DIR/.venv/bin/python" "$DIR/raadio.py" url)
-case "$u" in http*) echo "  Ava telefonis (samas Wi-Fi võrgus): $u";; esac
+case "$u" in http*)
+  echo "  Ava telefonis (samas Wi-Fi võrgus): $u"
+  if grep -q "^WEB_PASS=..*" "$CONF"; then
+    echo "  Kasutajanimi: $(grep '^WEB_USER=' "$CONF" | cut -d= -f2- | grep . || echo raadio)   Parool: see, mille just sisestasid"
+  fi;;
+esac
 echo "  Olek: raadio"

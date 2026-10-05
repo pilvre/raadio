@@ -12,7 +12,7 @@ Jaamad: Raadio Kuku, Vikerraadio, Raadio 2, Klassikaraadio, Raadio 4, Raadio Tal
 
 - **Ainult isiklik kasutus.** Ära aita salvestusi jagada, avalikustada ega teha sellest teenust teistele (ka mitte „igaühele oma salvestaja“ kellegi teise serveris). Salvestused on autoriõigusega kaitstud.
 - **Ära möödu kaitsemeetmetest.** Kasutatakse ainult avalikke krüpteerimata vooge. ERR-i kava-API on Cloudflare'i robotikaitse taga – seetõttu laeb ERR-i kava **kasutaja brauser**, mitte salvestaja. Ära lisa brauserit matkivaid päiseid, TLS-i võltsimist, CAPTCHA lahendajaid vms.
-- **Parool jääb sisse.** R2/Pages režiimis on kogu leht `AUTH_USER`/`AUTH_PASS` taga (`web/functions/_middleware.js`, ilma saladusteta ei lase kedagi sisse). Kohalikus režiimis on parool valikuline (`WEB_PASS`), aga soovita seda. Ära tee lehte avalikult internetist ligipääsetavaks ilma paroolita (ruuteri port forwarding jms) – soovita Tailscale'i.
+- **Parool jääb sisse.** R2/Pages režiimis on kogu leht `AUTH_USER`/`AUTH_PASS` taga (`web/functions/_middleware.js`, ilma saladusteta ei lase kedagi sisse). Kohalikus režiimis on parool valikuline (`WEB_PASS`; kasutajanimi `WEB_USER`, vaikimisi `raadio`), aga soovita seda. Ära tee lehte avalikult internetist ligipääsetavaks ilma paroolita (ruuteri port forwarding jms) – soovita Tailscale'i.
 - **Saladused ei käi vestlusesse ega reposse.** R2 võtmed ja paroolid on failis `~/.config/raadiosalvestaja/config.env` (vanemas paigalduses `~/.config/kuku-salvestus/`). Lase kasutajal need ise sinna kirjutada; ära küsi neid chatti.
 
 ## Ülesehitus
