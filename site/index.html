@@ -100,6 +100,17 @@
   .note b { color: var(--text); }
   footer { border-top: 1px solid var(--line); padding: 28px 0 40px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 
+  dialog#disc { border: 0; border-radius: 20px; padding: 0; max-width: 520px; width: calc(100% - 32px);
+    background: var(--surface); color: var(--text); box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); }
+  dialog#disc::backdrop { background: rgba(10,10,12,.55); backdrop-filter: blur(3px); }
+  #disc .in { padding: 26px 26px 22px; }
+  #disc h2 { font-size: 22px; margin: 0 0 12px; }
+  #disc p { color: var(--muted); font-size: 15px; margin: 0 0 12px; }
+  #disc .btns { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+  #disc .btns a, #disc .btns button { font-family: inherit; font-size: 15px; font-weight: 600; line-height: 1.2; padding: 13px 16px; border-radius: 12px; cursor: pointer; text-align: center; text-decoration: none; }
+  #disc .leave { border: 1px solid var(--line); background: none; color: var(--text); }
+  #disc .accept { border: 0; background: var(--accent); color: #fff; }
+
   @media (max-width: 820px) {
     .hero { grid-template-columns: 1fr; gap: 36px; padding-top: 16px; }
     .grid { grid-template-columns: 1fr 1fr; }
@@ -229,7 +240,33 @@
   </footer>
 </div>
 
+<dialog id="disc" aria-labelledby="discTitle">
+  <div class="in">
+    <h2 id="discTitle">Ainult isiklikuks kasutamiseks.</h2>
+    <p>Selle lehe koodi on kirjutanud sõbralik AI-agent nõudliku inimese juhendamisel. Kui sul on erisoove või tagasisidet, siis pigem ära kiirusta nende esitamisega.</p>
+    <p>Raadiosalvestaja salvestab jaamade vabalt edastatavat otse-eetrit sinu enda arvutisse – nagu raadiost lindistamine. See ei ole ühegi raadiojaama ametlik tööriist ega nendega seotud. Salvestused on autoriõigusega kaitstud: ära jaga neid ega tee lehte avalikuks. Tööriist on avatud lähtekoodiga ja tuleb ilma garantiita; kasutad omal vastutusel.</p>
+    <div class="btns">
+      <a class="leave" href="https://en.wikipedia.org/wiki/AI_slop">Jälestan AI-sloppi ja lahkun kohe</a>
+      <button class="accept" id="discOk" autofocus>Võtan kõik riskid ja vastutused</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
+// esmakordsel avamisel lahtiütlus (meeles ainult selles brauseris)
+(() => {
+  const d = document.getElementById("disc");
+  let seen = false;
+  try { seen = localStorage.getItem("raadio-disclaimer") === "1"; } catch {}
+  if (seen || !d.showModal) return;
+  d.addEventListener("cancel", (e) => e.preventDefault()); // Esc ei sulge – vali üks nuppudest
+  document.getElementById("discOk").onclick = () => {
+    try { localStorage.setItem("raadio-disclaimer", "1"); } catch {}
+    d.close();
+  };
+  d.showModal();
+})();
+
 const BASE = location.origin.startsWith("http") && !location.hostname.match(/^(localhost|127\.)/) ? location.origin : "https://raadio.mastering.ee";
 const CMD = { mac: `curl -fsSL ${BASE}/install | zsh`, win: `irm ${BASE}/install.ps1 | iex` };
 const LABEL = { mac: "Ava Terminal (Rakendused → Utiliidid → Terminal), kleebi sinna see käsk ja vajuta Enter:",
