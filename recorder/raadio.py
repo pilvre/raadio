@@ -62,15 +62,31 @@ def kill_windows_ffmpeg():
        "Where-Object { $_.CommandLine -like '*write_xing*' } | Invoke-CimMethod -MethodName Terminate | Out-Null")
 
 
+def show_access():
+    """Veebilehe aadress (+ kasutajanimi), kui arvuti ise lehte jagab."""
+    u = url()
+    if not u:
+        return
+    print(f"  🌐 {u}")
+    e = env()
+    if e.get("WEB_PASS"):
+        print(f"  Kasutajanimi: {e.get('WEB_USER') or 'raadio'}")
+
+
 def start():
     if running():
-        return print("juba töötab")
+        print("juba töötab")
+        return show_access()
     if MAC:
         sh(["launchctl", "bootstrap", f"gui/{os.getuid()}", str(mac_plist())])
     elif WIN:
         ps(f"Start-ScheduledTask -TaskName '{WIN_TASK}'")
     time.sleep(2)
-    print("käivitatud" if running() else "käivitamine ebaõnnestus – vaata: raadio log")
+    if running():
+        print("käivitatud")
+        show_access()
+    else:
+        print("käivitamine ebaõnnestus – vaata: raadio log")
 
 
 def stop(ask=True):
@@ -96,6 +112,7 @@ def restart():
         start()
         return
     print("taaskäivitatud")
+    show_access()
 
 
 # --- olek ---------------------------------------------------------------------
@@ -145,9 +162,7 @@ def status():
             print(f"  ⏭ {fmt_time(n['start'])}  {n['title']}")
         if st.get("last_error"):
             print(f"  ⚠ {st['last_error']}")
-    u = url()
-    if u:
-        print(f"  🌐 {u}")
+    show_access()
     lf = log_file()
     if lf.exists():
         print("\nViimased logiread:")
