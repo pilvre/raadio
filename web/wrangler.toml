@@ -1,7 +1,7 @@
-name = "kuku"
+name = "raadio"
 pages_build_output_dir = "public"
 compatibility_date = "2026-09-01"
 
 [[r2_buckets]]
 binding = "KUKU"
-bucket_name = "kuku"
+bucket_name = "raadio"

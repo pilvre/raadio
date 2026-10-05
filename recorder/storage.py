@@ -18,7 +18,7 @@ class R2Storage:
         import boto3
         from botocore.config import Config
 
-        self.bucket = env.get("R2_BUCKET", "kuku")
+        self.bucket = env.get("R2_BUCKET", "raadio")
         self.s3 = boto3.client(
             "s3",
             endpoint_url=env["R2_ENDPOINT"],

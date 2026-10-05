@@ -73,12 +73,12 @@ Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removab
 
 Vaja lisaks: Node.js, Cloudflare konto.
 
-1. **R2:** Cloudflare → R2 → loo bucket (nt `kuku`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
+1. **R2:** Cloudflare → R2 → loo bucket (nt `raadio`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
 2. **Salvestaja:** paigaldaja → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita paigaldaja uuesti.
 3. **Veebileht:** **Workers & Pages → Create → Pages → Connect to Git** → see repo
    - Build command: *(tühi)*, Build output: `public`, Root directory: `web`
-   - Kui bucketi nimi pole `kuku`, muuda `web/wrangler.toml` (binding `KUKU`)
-   - **Settings → Variables and Secrets** (tüüp *Secret*): `AUTH_USER` ja `AUTH_PASS`, seejärel **Retry deployment**
+   - Kui bucketi nimi pole `raadio`, muuda `web/wrangler.toml` (binding `KUKU`)
+   - **Settings → Variables and Secrets** (tüüp *Secret*): `AUTH_USER` (kasutajanimi) ja `AUTH_PASS` (parool), seejärel **Retry deployment**
 
 Ilma `AUTH_USER`/`AUTH_PASS` saladusteta ei lase leht kedagi sisse.
 
