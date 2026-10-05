@@ -1,0 +1,11 @@
+{
+  "name": "kuku-salvestus-web",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler pages dev --port 8788",
+    "deploy": "wrangler pages deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

@@ -1,0 +1,39 @@
+#!/bin/zsh
+# Raadiosalvestaja – ühe käsu paigaldus macOS-ile:
+#   curl -fsSL https://raadio.mastering.ee/install | zsh
+# Laeb tööriista kausta ~/Raadiosalvestaja, kontrollib ffmpeg-i ja Pythoni, käivitab paigaldaja.
+set -e
+REPO=${RAADIO_REPO:-pilvre/raadio}
+REF=${RAADIO_REF:-main}
+APP=${RAADIO_DIR:-$HOME/Raadiosalvestaja}
+
+echo "Raadiosalvestaja – paigaldus"
+if [ "$(uname)" != Darwin ]; then
+  echo "See paigaldaja on macOS-ile. Windowsis (PowerShell): irm https://raadio.mastering.ee/install.ps1 | iex"
+  exit 1
+fi
+
+if ! command -v ffmpeg >/dev/null || ! python3 -c 'import sys; assert sys.version_info >= (3, 9)' 2>/dev/null; then
+  if ! command -v brew >/dev/null; then
+    echo
+    echo "Vaja on Homebrew'd (macOS-i paketihaldur). Paigalda see: https://brew.sh"
+    echo "ja käivita seejärel see käsk uuesti."
+    exit 1
+  fi
+  command -v ffmpeg >/dev/null || { echo "→ Paigaldan ffmpeg-i (brew)"; brew install ffmpeg; }
+  python3 -c 'import sys; assert sys.version_info >= (3, 9)' 2>/dev/null || { echo "→ Paigaldan Pythoni (brew)"; brew install python; }
+fi
+
+echo "→ Laen alla: $REPO ($REF)"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+if [ -n "$RAADIO_SOURCE" ]; then
+  mkdir -p "$tmp/src" && cp -R "$RAADIO_SOURCE/." "$tmp/src/"
+else
+  curl -fsSL "https://github.com/$REPO/archive/refs/heads/$REF.tar.gz" | tar xz -C "$tmp"
+  mv "$tmp"/*-"$REF" "$tmp/src"
+fi
+mkdir -p "$APP"
+rsync -a --delete --exclude ".venv" --exclude "node_modules" "$tmp/src/" "$APP/"
+
+exec zsh "$APP/recorder/install.sh"

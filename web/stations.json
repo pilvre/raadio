@@ -1,0 +1,20 @@
+[
+  { "id": "kuku", "name": "Raadio Kuku", "short": "Kuku",
+    "stream": "https://router.euddn.net/189e8110a165b526b8b767d23e4ebb55/kuku/stream.m3u8?c=8000",
+    "schedule": { "type": "kuku" } },
+  { "id": "vikerraadio", "name": "Vikerraadio", "short": "Viker",
+    "stream": "https://icecast.err.ee/vikerraadio.mp3",
+    "schedule": { "type": "err", "channel": "vikerraadio" } },
+  { "id": "raadio2", "name": "Raadio 2", "short": "R2",
+    "stream": "https://icecast.err.ee/raadio2.mp3",
+    "schedule": { "type": "err", "channel": "raadio2" } },
+  { "id": "klassikaraadio", "name": "Klassikaraadio", "short": "Klassika",
+    "stream": "https://icecast.err.ee/klassikaraadio.mp3",
+    "schedule": { "type": "err", "channel": "klassikaraadio" } },
+  { "id": "raadio4", "name": "Raadio 4", "short": "R4",
+    "stream": "https://icecast.err.ee/raadio4.mp3",
+    "schedule": { "type": "err", "channel": "raadio4" } },
+  { "id": "raadiotallinn", "name": "Raadio Tallinn", "short": "Tallinn",
+    "stream": "https://icecast.err.ee/raadiotallinn.mp3",
+    "schedule": { "type": "err", "channel": "raadiotallinn" } }
+]

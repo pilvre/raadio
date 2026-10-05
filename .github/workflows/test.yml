@@ -1,0 +1,90 @@
+name: Paigalduse test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - name: ffmpeg
+        run: choco install ffmpeg -y --no-progress
+      - name: Paigaldus (site/install.ps1, kohalik režiim)
+        env:
+          RAADIO_SOURCE: ${{ github.workspace }}
+          RAADIO_NONINTERACTIVE: "1"
+          RAADIO_MODE: local
+          RAADIO_PASS: test
+        run: |
+          $env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+          ./site/install.ps1
+      - name: Teenus ja veebileht
+        run: |
+          $app = Join-Path $env:LOCALAPPDATA "Raadiosalvestaja\app\recorder"
+          Get-ScheduledTask -TaskName Raadiosalvestaja | Format-List TaskName,State
+          $auth = @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("raadio:test")) }
+          $ok = $false
+          for ($i = 0; $i -lt 45; $i++) {
+            try { $s = Invoke-RestMethod http://localhost:8788/api/schedule -Headers $auth; if ($s.episodes.Count -gt 0) { $ok = $true; break } } catch { }
+            Start-Sleep 2
+          }
+          Get-Content (Join-Path $env:LOCALAPPDATA "Raadiosalvestaja\salvestaja.log") -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "veebileht/kava ei vasta" }
+          "jaamu: $($s.stations.Count), Kuku saateid: $($s.episodes.Count)"
+          try { Invoke-WebRequest http://localhost:8788/api/config -UseBasicParsing | Out-Null; throw "parool ei kaitse" } catch { if ($_.Exception.Response.StatusCode.value__ -ne 401) { throw } }
+          & "$app\.venv\Scripts\python.exe" "$app\raadio.py"
+      - name: Testsalvestus ja helifail
+        run: |
+          $app = Join-Path $env:LOCALAPPDATA "Raadiosalvestaja\app\recorder"
+          & "$app\.venv\Scripts\python.exe" "$app\raadio.py" test 20 vikerraadio
+          $auth = @{ Authorization = "Basic " + [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("raadio:test")) }
+          $recs = Invoke-RestMethod http://localhost:8788/api/recordings -Headers $auth
+          if ($recs.Count -lt 1) { throw "salvestust pole" }
+          $key = $recs[0].key; "salvestus: $key ($($recs[0].duration) s, $($recs[0].station_name))"
+          $r = Invoke-WebRequest "http://localhost:8788/audio/$key" -Headers ($auth + @{ Range = "bytes=0-999" }) -UseBasicParsing
+          if ($r.StatusCode -ne 206) { throw "Range ei toimi: $($r.StatusCode)" }
+      - name: raadio stop / start
+        run: |
+          $app = Join-Path $env:LOCALAPPDATA "Raadiosalvestaja\app\recorder"
+          & "$app\.venv\Scripts\python.exe" "$app\raadio.py" stop
+          & "$app\.venv\Scripts\python.exe" "$app\raadio.py" start
+          & "$app\.venv\Scripts\python.exe" "$app\raadio.py"
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: ffmpeg
+        run: brew install ffmpeg
+      - name: Paigaldus (site/install, kohalik režiim)
+        env:
+          RAADIO_SOURCE: ${{ github.workspace }}
+          RAADIO_NONINTERACTIVE: "1"
+          RAADIO_MODE: local
+          RAADIO_PASS: test
+        run: zsh site/install
+      - name: Teenus ja veebileht
+        run: |
+          launchctl print gui/$(id -u)/ee.raadiosalvestaja | head -5
+          for i in $(seq 45); do
+            curl -sf -u raadio:test http://localhost:8788/api/schedule -o s.json \
+              && python3 -c "import json,sys;sys.exit(0 if json.load(open('s.json'))['episodes'] else 1)" && break
+            sleep 2
+          done
+          cat ~/Library/Logs/raadiosalvestaja.log
+          python3 -c "import json;d=json.load(open('s.json'));print('jaamu',len(d['stations']),'Kuku saateid',len(d['episodes']));assert d['episodes']"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8788/api/config)" = 401
+          ~/Raadiosalvestaja/recorder/raadio
+      - name: Testsalvestus ja helifail
+        run: |
+          ~/Raadiosalvestaja/recorder/raadio test 20 vikerraadio
+          key=$(curl -s -u raadio:test http://localhost:8788/api/recordings | python3 -c "import json,sys;d=json.load(sys.stdin);print(d[0]['key'])")
+          echo "salvestus: $key"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u raadio:test -H 'Range: bytes=0-999' http://localhost:8788/audio/$key)" = 206

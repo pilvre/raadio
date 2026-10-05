@@ -1,0 +1,7 @@
+node_modules/
+.venv/
+.wrangler/
+r2.env
+.dev.vars
+.claude/
+.DS_Store

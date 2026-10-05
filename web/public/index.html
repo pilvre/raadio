@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14161a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Raadio">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23e5484d'/><circle cx='16' cy='16' r='6' fill='white'/></svg>">
+<title>Raadiosalvestaja</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --surface: #fff; --text: #17181b; --muted: #6b6e76; --line: #e3e3df;
+    --accent: #e5484d; --accent-soft: #fde8e8; --ok: #2f9e5b; --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161a; --surface: #1d2025; --text: #ececec; --muted: #9a9ea6; --line: #2c3037;
+      --accent: #ff5f63; --accent-soft: #3a2224; --ok: #4cc27f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: calc(10px + env(safe-area-inset-top)) 16px 0; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 20px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  #status { font-size: 13px; color: var(--muted); min-height: 18px; }
+  #status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+  #status.ok .dot { background: var(--ok); } #status.rec .dot { background: var(--accent); animation: pulse 1.2s infinite; }
+  #status.err .dot { background: #d29922; }
+  @keyframes pulse { 50% { opacity: .3; } }
+  nav { display: flex; gap: 4px; margin-top: 8px; }
+  nav button { flex: 1; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap;
+    padding: 10px 0; border-bottom: 2px solid transparent; cursor: pointer; }
+  nav button.on { color: var(--text); border-color: var(--accent); }
+  main { max-width: 720px; margin: 0 auto; padding: 12px 16px; }
+  .days { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+  .days button { flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+    border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; }
+  .days button.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .stations { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
+  .stations button { flex: none; border: 0; background: none; color: var(--muted); font: inherit; font-weight: 600;
+    font-size: 14px; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+  .stations button.on { background: var(--accent-soft); color: var(--accent); }
+  .stations .golive { margin-left: auto; color: var(--accent); border: 1px solid var(--accent); }
+  .stations .golive.playing { background: var(--accent); color: #fff; }
+  #player.onair #pSeek, #player.onair #pBack, #player.onair #pFwd { visibility: hidden; }
+  .stn { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .timer-form { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px;
+    display: grid; gap: 10px; }
+  .timer-form .r { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .timer-form input[type=text] { flex: 1; min-width: 0; }
+  .timer-form input, .timer-form select { font: inherit; font-size: 15px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+  .wd { display: flex; gap: 4px; }
+  .wd label { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: var(--muted); cursor: pointer; user-select: none; }
+  .wd input { display: none; }
+  .wd input:checked + span { color: var(--accent); }
+  .wd label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+  .list { display: flex; flex-direction: column; gap: 6px; }
+  .row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 10px 12px; cursor: pointer; text-align: left; width: 100%; color: inherit; font: inherit; }
+  .row.past { opacity: .45; }
+  .row.marked { border-color: var(--accent); background: var(--accent-soft); }
+  .row img { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; flex: none; background: var(--line); }
+  .row .time { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); width: 44px; flex: none; }
+  .row .body { flex: 1; min-width: 0; }
+  .row .name { font-weight: 600; }
+  .row .sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px;
+    background: var(--line); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
+  .tag.live { background: var(--accent); color: #fff; }
+  .rec-ico { color: var(--accent); font-size: 18px; flex: none; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 8px; }
+  h2:first-child { margin-top: 4px; }
+  .empty { color: var(--muted); text-align: center; padding: 40px 0; }
+  .usage { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+  .usage .total { display: flex; justify-content: space-between; align-items: baseline; font-weight: 600; }
+  .usage .total span { font-weight: 400; font-size: 13px; color: var(--muted); }
+  .bar { height: 6px; border-radius: 3px; background: var(--line); margin: 8px 0 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+  .usage table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+  .usage td { padding: 6px 0; border-top: 1px solid var(--line); }
+  .usage td.n { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 12px; }
+  .btn { border: 1px solid var(--line); background: var(--surface); color: var(--text); border-radius: 10px;
+    padding: 8px 12px; font: inherit; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.ghost { border: 0; background: none; color: var(--muted); padding: 8px; }
+  select.keep { font: inherit; font-size: 14px; color: var(--text); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; }
+  label.sw { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+  /* bottom sheet */
+  #sheet { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; z-index: 20; align-items: flex-end; justify-content: center; }
+  #sheet.open { display: flex; }
+  #sheet .panel { background: var(--surface); width: 100%; max-width: 520px; border-radius: 18px 18px 0 0;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+  #sheet .panel h3 { margin: 0; font-size: 18px; }
+  #sheet .panel p { margin: 0 0 6px; color: var(--muted); font-size: 14px; }
+  #sheet .panel .btn { padding: 12px; width: 100%; }
+  /* player */
+  #player { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: var(--surface);
+    border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: none; }
+  #player.on { display: block; }
+  #player .inner { max-width: 720px; margin: 0 auto; }
+  #player .ttl { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #player .ctl { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  #player input[type=range] { flex: 1; accent-color: var(--accent); }
+  #player .t { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+  #player .big { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 18px; cursor: pointer; }
+  .tag.dl { background: var(--accent-soft); color: var(--accent); }
+  .acts { display: flex; gap: 2px; flex: none; }
+  .ib { width: 34px; height: 34px; display: grid; place-items: center; border: 0; background: none; color: var(--muted);
+    border-radius: 8px; cursor: pointer; padding: 0; text-decoration: none; font: 600 10px/1 inherit; }
+  .ib:hover { background: var(--line); }
+  .ib svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .ib.on { color: var(--accent); }
+  .ib.on svg { fill: var(--accent-soft); }
+  .ib.del:hover { color: var(--accent); }
+  #offline { display: none; background: #d29922; color: #111; font-size: 13px; padding: 6px 16px; text-align: center; }
+  #offline.on { display: block; }
+  .row.unavail { opacity: .4; }
+  .toast { position: fixed; left: 50%; bottom: 170px; transform: translateX(-50%); background: var(--text); color: var(--bg);
+    padding: 8px 14px; border-radius: 10px; font-size: 14px; z-index: 30; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Raadiosalvestaja</h1>
+  <div id="status"><span class="dot"></span>…</div>
+  <nav>
+    <button data-tab="kava" class="on">Kava</button>
+    <button data-tab="timers">Taimerid</button>
+    <button data-tab="rec">Salvestused</button>
+    <button data-tab="shows">Minu saated</button>
+  </nav>
+</header>
+<div id="offline">Võrguühendus puudub – kuulata saab telefoni laaditud salvestusi.</div>
+<main id="main"></main>
+
+<div id="sheet"><div class="panel" id="sheetPanel"></div></div>
+
+<div id="player"><div class="inner">
+  <div class="ttl" id="pTitle"></div>
+  <div class="ctl">
+    <button class="btn ghost" id="pBack" aria-label="15 s tagasi">↺15</button>
+    <button class="big" id="pPlay" aria-label="Esita">▶</button>
+    <button class="btn ghost" id="pFwd" aria-label="30 s edasi">30↻</button>
+    <input type="range" id="pSeek" min="0" max="1000" value="0">
+    <button class="btn ghost" id="pRate">1×</button>
+  </div>
+  <div class="t" id="pTime" style="text-align:left"></div>
+</div></div>
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+const TZ = "Europe/Tallinn";
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtTime = (iso) => new Date(iso).toLocaleTimeString("et-EE", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+const dayKey = (iso) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: TZ });
+const dayLabel = (key) => {
+  const today = dayKey(new Date().toISOString());
+  const tomorrow = dayKey(new Date(Date.now() + 86400e3).toISOString());
+  if (key === today) return "Täna";
+  if (key === tomorrow) return "Homme";
+  return new Date(key + "T12:00:00").toLocaleDateString("et-EE", { weekday: "short", day: "numeric", month: "numeric" });
+};
+const dur = (s) => { s = Math.round(s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+const toast = (msg) => { const t = document.createElement("div"); t.className = "toast"; t.textContent = msg;
+  document.body.append(t); setTimeout(() => t.remove(), 2200); };
+const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+
+let tab = "kava", config = { shows: [], episodes: [], timers: [] }, recordings = [], status = null;
+let selectedDay = null, stations = [], schedules = {}, loading = {}, loadFailed = {};
+let selectedStation = store.get("station", "kuku");
+const stationById = (id) => stations.find((s) => s.id === id);
+const stationName = (id) => stationById(id)?.name || id || "";
+
+// --- ERR-i kava: laetakse brauseris (serveripoolne päring on Cloudflare'i robotikaitse taga) ---
+const ERR_API = "https://vikerraadio.err.ee/api/radioSchedule/getTimelineSchedule2";
+const stripHtml = (h, n = 400) => (h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+const errPhoto = (photos) => { const p = (photos || [])[0]; if (!p) return null;
+  const t = p.photoTypes || {}; return (t["22"] || t["8"] || {}).url || p.photoUrlBase || null; };
+async function fetchErr(st) {
+  const seen = new Set(), out = [];
+  // API annab päringupäeva ±1 päev -> +1, +4, +7 katavad tänasest 9 päeva
+  for (const off of [1, 4, 7]) {
+    const [y, m, d] = dayKey(new Date(Date.now() + off * 86400e3).toISOString()).split("-").map(Number);
+    const r = await fetch(`${ERR_API}?day=${d}&month=${m}&year=${y}&channel=${st.schedule.channel}&portal=radio`);
+    if (!r.ok) throw new Error(`${st.name}: ${r.status}`);
+    for (const x of await r.json()) {
+      if (seen.has(x.id) || x.endTime <= x.startTime) continue;
+      seen.add(x.id);
+      const c = (x.contents || [])[0] || {}, root = c.rootContent || {};
+      const name = x.programName.replace(/\*+$/, "").trim();
+      out.push({
+        id: `${st.id}:${x.id}`, station: st.id,
+        start: new Date(x.startTime * 1000).toISOString(), end: new Date(x.endTime * 1000).toISOString(),
+        title: (x.contentHeading || name).replace(/\*+$/, "").trim(), rerun: x.programName.endsWith("*"),
+        description: stripHtml(c.lead) || stripHtml(c.body),
+        show: { id: `${st.id}:${x.radiomanId}`, name, description: stripHtml(root.lead, 200),
+          thumbnail: errPhoto(x.photos) || errPhoto(root.photos) },
+      });
+    }
+  }
+  return out.sort((a, b) => a.start.localeCompare(b.start));
+}
+// NB: tagastab Promise'i ainult siis, kui päriselt laeb (muidu render() -> then -> render() tsükkel)
+function loadStation(id) {
+  const st = stationById(id);
+  if (!st || st.server) return Promise.resolve(schedules[id] || null);
+  if (schedules[id]) return Promise.resolve(schedules[id]);
+  if (!loading[id]) {
+    delete loadFailed[id];
+    loading[id] = fetchErr(st).then((eps) => (schedules[id] = eps))
+      .catch((e) => { console.error(e); loadFailed[id] = String(e.message || e); return null; })
+      .finally(() => { delete loading[id]; });
+  }
+  return loading[id];
+}
+// ERR-i saadete tellimused -> konkreetsed episoodid config.episodes alla (auto)
+async function syncBrowserShows() {
+  const now = Date.now();
+  const subs = config.shows.filter((s) => !stationById(s.station)?.server && stationById(s.station));
+  const byStation = {};
+  for (const s of subs) (byStation[s.station] ??= []).push(s);
+  let changed = false;
+  // tellimata saadete auto-episoodid ära
+  const keep = config.episodes.filter((e) => !e.auto || subs.some((s) => s.id === e.show?.id && (!e.rerun || s.reruns)));
+  if (keep.length !== config.episodes.length) { config.episodes = keep; changed = true; }
+  for (const [sid, list] of Object.entries(byStation)) {
+    const eps = await loadStation(sid);
+    if (!eps) continue;
+    for (const ep of eps) {
+      const s = list.find((x) => x.id === ep.show.id);
+      if (!s || (ep.rerun && !s.reruns) || Date.parse(ep.end) < now || config.episodes.some((e) => e.id === ep.id)) continue;
+      config.episodes.push({ ...ep, auto: true });
+      changed = true;
+    }
+    config.synced = { ...(config.synced || {}), [sid]: new Date().toISOString() };
+    changed = true;
+  }
+  if (changed) await saveConfig();
+}
+
+async function api(path, opts) {
+  const r = await fetch(path, opts);
+  if (!r.ok) throw new Error(`${path}: ${r.status}`);
+  return r.status === 204 ? null : r.json();
+}
+async function saveConfig() {
+  config = await api("/api/config", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(config) });
+  render();
+}
+const showMarked = (id) => config.shows.find((s) => s.id === id);
+const keepTarget = (id) => config.shows.find((s) => s.id == id) || config.timers.find((t) => t.id == id);
+const willRecord = (ep) => config.episodes.some((e) => e.id === ep.id) ||
+  (showMarked(ep.show.id) && (!ep.rerun || showMarked(ep.show.id).reruns));
+
+const KEEP_OPTS = [[null, "14 päeva"], [1, "1 viimane"], [2, "2 viimast"], [3, "3 viimast"], [5, "5 viimast"], [10, "10 viimast"], [20, "20 viimast"]];
+const keepSelect = (s) => `<label class="sw">Hoia alles
+  <select class="keep" data-keep="${s.id}">${KEEP_OPTS.map(([v, t]) => `<option value="${v ?? ""}" ${(s.keep ?? null) === v ? "selected" : ""}>${t}</option>`).join("")}</select></label>`;
+function bindKeep(root, after) {
+  root.querySelectorAll("[data-keep]").forEach((el) => el.onchange = async () => {
+    keepTarget(el.dataset.keep).keep = el.value ? +el.value : null;
+    await saveConfig(); after?.();
+  });
+}
+
+// --- staatus ---
+function renderStatus() {
+  const el = $("#status");
+  if (!status) { el.className = "err"; el.innerHTML = '<span class="dot"></span>Salvestaja pole veel ühendust võtnud'; return; }
+  const age = (Date.now() - Date.parse(status.updated)) / 60e3;
+  if (age > 3) { el.className = "err"; el.innerHTML = `<span class="dot"></span>Salvestaja vaikib (${Math.round(age)} min)`; return; }
+  if (status.recording?.length) {
+    const r = status.recording[0];
+    el.className = "rec";
+    el.innerHTML = `<span class="dot"></span>Salvestab: ${esc(r.title)} · ${Math.round((r.bytes || 0) / 1048576)} MB`;
+    return;
+  }
+  el.className = status.last_error ? "err" : "ok";
+  const n = status.next?.[0];
+  el.innerHTML = `<span class="dot"></span>` + (n ? `Järgmine: ${esc(n.title)} · ${dayLabel(dayKey(n.start))} ${fmtTime(n.start)}` : "Valmis, midagi pole plaanis")
+    + (status.last_error ? ` · ⚠︎ ${esc(status.last_error)}` : "");
+}
+
+// --- kava ---
+function renderKava(main) {
+  if (!stationById(selectedStation)) selectedStation = stations[0]?.id;
+  const onairNow = current?.onair === selectedStation;
+  const chips = `<div class="stations">${stations.map((s) => `<button data-st="${s.id}" class="${s.id === selectedStation ? "on" : ""}">${esc(s.short || s.name)}</button>`).join("")}
+    <button class="golive ${onairNow ? "playing" : ""}" id="goLive">${onairNow ? "❚❚ Otse" : "▶ Otse"}</button></div>`;
+  const schedule = schedules[selectedStation];
+  if (!schedule) {
+    const st = stationById(selectedStation);
+    if (loadFailed[selectedStation]) {
+      main.innerHTML = chips + `<div class="empty">Kava laadimine ebaõnnestus.<br><small>${esc(loadFailed[selectedStation])}</small><br><br><button class="btn" id="retry">Proovi uuesti</button></div>`;
+      bindStations(main);
+      $("#retry").onclick = () => { delete loadFailed[selectedStation]; render(); };
+      return;
+    }
+    main.innerHTML = chips + `<div class="empty">${st && st.server ? "Kava pole veel salvestajalt saabunud." : "Laen kava…"}</div>`;
+    bindStations(main);
+    if (st && !st.server && !loading[st.id]) {
+      const id = st.id;
+      loadStation(id).then(() => tab === "kava" && selectedStation === id && render());
+    }
+    return;
+  }
+  if (!schedule.length) { main.innerHTML = chips + '<div class="empty">Kava puudub.</div>'; bindStations(main); return; }
+  const days = [...new Set(schedule.map((e) => dayKey(e.start)))];
+  if (!days.includes(selectedDay)) selectedDay = days.find((d) => d === dayKey(new Date().toISOString())) || days[0];
+  const now = Date.now();
+  const eps = schedule.filter((e) => dayKey(e.start) === selectedDay);
+  main.innerHTML = chips + `<div class="days">${days.map((d) => `<button data-day="${d}" class="${d === selectedDay ? "on" : ""}">${dayLabel(d)}</button>`).join("")}</div>
+    <div class="list">${eps.map((e) => {
+      const past = Date.parse(e.end) < now, live = !past && Date.parse(e.start) <= now, mark = willRecord(e);
+      return `<button class="row ${past ? "past" : ""} ${mark ? "marked" : ""}" data-ep="${e.id}">
+        <span class="time">${fmtTime(e.start)}</span>
+        ${e.show.thumbnail ? `<img src="${esc(e.show.thumbnail)}" alt="" loading="lazy">` : ""}
+        <span class="body"><div class="name">${esc(e.show.name)}${live ? '<span class="tag live">eetris</span>' : ""}${e.rerun ? '<span class="tag">kordus</span>' : ""}</div>
+        <div class="sub">${fmtTime(e.start)}–${fmtTime(e.end)} · ${esc(e.title)}</div></span>
+        ${mark ? '<span class="rec-ico">●</span>' : ""}
+      </button>`;
+    }).join("")}</div>`;
+  main.querySelectorAll("[data-day]").forEach((b) => b.onclick = () => { selectedDay = b.dataset.day; render(); });
+  main.querySelectorAll("[data-ep]").forEach((b) => b.onclick = () => openSheet(schedule.find((e) => e.id == b.dataset.ep)));
+  bindStations(main);
+}
+function bindStations(main) {
+  main.querySelectorAll("[data-st]").forEach((b) => b.onclick = () => {
+    selectedStation = b.dataset.st; store.set("station", selectedStation); render();
+  });
+  const g = $("#goLive", main);
+  if (g) g.onclick = () => (current?.onair === selectedStation && !audio.paused ? audio.pause() : playLive(selectedStation));
+}
+
+function openSheet(ep) {
+  const past = Date.parse(ep.end) < Date.now();
+  const epOn = config.episodes.some((e) => e.id === ep.id);
+  const sh = showMarked(ep.show.id);
+  const p = $("#sheetPanel");
+  p.innerHTML = `<div class="stn">${esc(stationName(ep.station))}</div><h3>${esc(ep.show.name)}</h3>
+    <p>${dayLabel(dayKey(ep.start))} ${fmtTime(ep.start)}–${fmtTime(ep.end)} · ${esc(ep.title)}${ep.rerun ? " (kordus)" : ""}</p>
+    ${ep.description || ep.show.description ? `<p>${esc(ep.description || ep.show.description)}</p>` : ""}
+    ${!past && Date.parse(ep.start) <= Date.now() ? `<button class="btn" id="sLive">▶ Kuula otse-eetris</button>` : ""}
+    ${past ? "<p>See saade on juba möödas.</p>" : `<button class="btn ${epOn ? "" : "primary"}" id="sEp">${epOn ? "Ära salvesta seda episoodi" : "● Salvesta see episood"}</button>`}
+    <button class="btn ${sh ? "" : "primary"}" id="sShow">${sh ? "Lõpeta kõigi saadete salvestamine" : "● Salvesta kõik „" + esc(ep.show.name) + "“ saated"}</button>
+    ${sh ? `<label class="sw"><input type="checkbox" id="sRer" ${sh.reruns ? "checked" : ""}> Salvesta ka kordused</label>${keepSelect(sh)}` : ""}
+    <button class="btn ghost" id="sClose">Sulge</button>`;
+  $("#sheet").classList.add("open");
+  const close = () => $("#sheet").classList.remove("open");
+  $("#sClose").onclick = close;
+  $("#sLive") && ($("#sLive").onclick = () => { close(); playLive(ep.station); });
+  $("#sheet").onclick = (e) => { if (e.target.id === "sheet") close(); };
+  $("#sEp") && ($("#sEp").onclick = async () => {
+    config.episodes = epOn ? config.episodes.filter((e) => e.id !== ep.id)
+      : [...config.episodes, { ...ep }];
+    close(); await saveConfig(); toast(epOn ? "Eemaldatud" : "Salvestatakse");
+  });
+  $("#sShow").onclick = async () => {
+    config.shows = sh ? config.shows.filter((s) => s.id !== ep.show.id)
+      : [...config.shows, { id: ep.show.id, name: ep.show.name, station: ep.station, reruns: false }];
+    close(); await saveConfig(); await syncBrowserShows(); toast(sh ? "Saade eemaldatud" : "Kõik saated salvestatakse");
+  };
+  $("#sRer") && ($("#sRer").onchange = async (e) => { sh.reruns = e.target.checked; await saveConfig(); await syncBrowserShows(); openSheet(ep); });
+  bindKeep(p, () => { openSheet(ep); toast("Salvestatud"); });
+}
+
+// --- telefoni laadimine (offline) – vajab https-i (service worker + Cache Storage) ---
+const OFFLINE_OK = window.isSecureContext && "caches" in window && "serviceWorker" in navigator;
+const AUDIO_CACHE = "audio-v1", META_CACHE = "offline-meta-v1";
+let offline = new Map();      // key -> meta (telefoni laaditud)
+const downloading = {};        // key -> protsent
+const audioUrl = (key) => location.origin + "/audio/" + key;
+async function loadOffline() {
+  if (!OFFLINE_OK) return;
+  const c = await caches.open(META_CACHE);
+  offline = new Map();
+  for (const req of await c.keys()) { const m = await (await c.match(req)).json(); offline.set(m.key, m); }
+}
+async function downloadToPhone(r) {
+  if (downloading[r.key] != null) return;
+  downloading[r.key] = 0; render();
+  try {
+    navigator.storage?.persist?.();
+    const res = await fetch("/audio/" + r.key);
+    if (!res.ok) throw new Error(res.status);
+    const total = +res.headers.get("content-length") || r.size || 0;
+    const reader = res.body.getReader(), chunks = [];
+    let got = 0, last = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      const pct = total ? Math.floor(got / total * 100) : 0;
+      if (pct !== last) { last = pct; downloading[r.key] = pct; const t = document.querySelector(`[data-key="${CSS.escape(r.key)}"] .dlp`); if (t) t.textContent = `laadin ${pct}%`; }
+    }
+    const blob = new Blob(chunks, { type: "audio/mpeg" });
+    await (await caches.open(AUDIO_CACHE)).put(audioUrl(r.key), new Response(blob, { headers: { "content-type": "audio/mpeg", "content-length": String(blob.size) } }));
+    await (await caches.open(META_CACHE)).put(location.origin + "/offline-meta/" + r.key, new Response(JSON.stringify(r), { headers: { "content-type": "application/json" } }));
+    offline.set(r.key, r);
+    toast("Telefoni laaditud");
+  } catch (e) {
+    console.error(e); toast(e.name === "QuotaExceededError" ? "Telefonis pole ruumi" : "Laadimine ebaõnnestus");
+  } finally { delete downloading[r.key]; render(); }
+}
+async function removeFromPhone(key) {
+  await (await caches.open(AUDIO_CACHE)).delete(audioUrl(key));
+  await (await caches.open(META_CACHE)).delete(location.origin + "/offline-meta/" + key);
+  offline.delete(key); render();
+}
+const fileName = (r) => `${r.show} ${dayKey(r.start)} ${fmtTime(r.start).replace(":", ".")}${r.parts > 1 ? ` osa ${r.part}` : ""}.mp3`;
+
+const ICON = {
+  mp3: '<svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg>',
+  del: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
+};
+
+// --- salvestused ---
+function renderRec(main) {
+  // serveri salvestused + telefoni laaditud (ka need, mis serverist juba kustunud)
+  const all = [...recordings, ...[...offline.values()].filter((m) => !recordings.some((r) => r.key === m.key))];
+  const day = (iso) => dayKey(iso);
+  all.sort((a, b) => day(b.start).localeCompare(day(a.start)) || a.start.localeCompare(b.start));
+  if (!all.length) { main.innerHTML = '<div class="empty">Salvestusi veel pole. Vali kavast saateid.</div>'; return; }
+  const isOffline = !navigator.onLine;
+  const onServer = (r) => !isOffline && recordings.some((x) => x.key === r.key);
+  const pos = store.get("pos", {});
+  let html = "", lastDay = "";
+  for (const r of all) {
+    const d = dayKey(r.start);
+    if (d !== lastDay) { html += `<h2>${dayLabel(d)} · ${new Date(d + "T12:00:00").toLocaleDateString("et-EE")}</h2>`; lastDay = d; }
+    const p = pos[r.key], prog = !r.live && p && r.duration ? ` · kuulatud ${Math.round(p / r.duration * 100)}%` : "";
+    const unavail = isOffline && !offline.has(r.key);
+    html += `<div class="row ${unavail ? "unavail" : ""}" data-key="${esc(r.key)}">
+      ${r.thumbnail ? `<img src="${esc(r.thumbnail)}" alt="" loading="lazy">` : ""}
+      <span class="body"><div class="name">${esc(r.show)}${r.live ? '<span class="tag live">salvestamisel</span>' : ""}${r.incomplete ? '<span class="tag">katkestatud</span>' : ""}${downloading[r.key] != null ? `<span class="tag dl dlp">laadin ${downloading[r.key]}%</span>` : ""}${r.rerun ? '<span class="tag">kordus</span>' : ""}</div>
+      <div class="sub">${esc(r.station_name || "Raadio Kuku")} · ${fmtTime(r.start)}–${fmtTime(r.end)}${r.parts > 1 ? ` · osa ${r.part}/${r.parts}` : ""} · ${r.live ? "seni " : ""}${dur(r.duration)}${prog} · ${Math.round(r.size / 1048576)} MB</div></span>
+      ${r.live ? "" : `<span class="acts">
+        ${onServer(r) ? `<a class="ib" href="/audio/${esc(r.key)}?dl=${encodeURIComponent(fileName(r))}" download="${esc(fileName(r))}" title="Salvesta MP3 failina" aria-label="Salvesta MP3 failina">${ICON.mp3}</a>` : ""}
+        ${OFFLINE_OK ? `<button class="ib ${offline.has(r.key) ? "on" : ""}" data-phone="${esc(r.key)}" title="${offline.has(r.key) ? "Telefonis – eemalda" : "Laadi telefoni (kuulamiseks ilma võrguta)"}" aria-label="Telefoni">${ICON.phone}</button>` : ""}
+        ${onServer(r) ? `<button class="ib del" data-del="${esc(r.key)}" title="Kustuta" aria-label="Kustuta">${ICON.del}</button>` : ""}
+      </span>`}
+    </div>`;
+  }
+  main.innerHTML = `<div class="list">${html}</div>`;
+  const find = (k) => all.find((r) => r.key === k);
+  main.querySelectorAll("[data-key]").forEach((el) => el.onclick = (e) => {
+    if (e.target.closest(".acts")) return;
+    const r = find(el.dataset.key);
+    if (!navigator.onLine && !offline.has(r.key)) return toast("Pole telefoni laaditud");
+    play(r);
+  });
+  main.querySelectorAll("[data-phone]").forEach((b) => b.onclick = () => {
+    const r = find(b.dataset.phone);
+    if (!offline.has(r.key)) return downloadToPhone(r);
+    if (confirm("Eemaldada telefonist?")) removeFromPhone(r.key);
+  });
+  main.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+    if (!confirm(`Kustutada salvestus?${offline.has(b.dataset.del) ? " (Telefoni koopia jääb alles.)" : ""}`)) return;
+    await api("/api/recordings?key=" + encodeURIComponent(b.dataset.del), { method: "DELETE" });
+    recordings = recordings.filter((r) => r.key !== b.dataset.del); render();
+  });
+}
+
+// --- minu saated ---
+function renderShows(main) {
+  const upcomingEps = config.episodes.filter((e) => !e.auto && Date.parse(e.end) > Date.now());
+  const FREE = 10 * 1024 ** 3; // R2 tasuta maht
+  const fmtSize = (b) => b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + " GB" : Math.round(b / 1024 ** 2) + " MB";
+  const byShow = {};
+  for (const r of recordings) {
+    const g = byShow[r.show] ??= { n: 0, size: 0, dur: 0 };
+    g.n++; g.size += r.size || 0; g.dur += r.duration || 0;
+  }
+  const total = Object.values(byShow).reduce((a, g) => a + g.size, 0);
+  const rows = Object.entries(byShow).sort((a, b) => b[1].size - a[1].size);
+  const usage = `<h2>Maht R2-s</h2><div class="usage">
+    <div class="total">${fmtSize(total)} <span>${recordings.length} salvestust · tasuta 10 GB-st ${(total / FREE * 100).toFixed(1)}%</span></div>
+    <div class="bar"><i style="width:${Math.min(100, total / FREE * 100)}%"></i></div>
+    ${rows.length ? `<table>${rows.map(([name, g]) => `<tr><td>${esc(name)}</td>
+      <td class="n">${g.n} × · ${g.dur < 3600 ? Math.round(g.dur / 60) + " min" : Math.round(g.dur / 360) / 10 + " h"}</td><td class="n">${fmtSize(g.size)}</td></tr>`).join("")}</table>` : ""}
+  </div>`;
+  main.innerHTML = `${usage}<h2>Kõik saated</h2>
+    ${config.shows.length ? `<div class="list">${config.shows.map((s) => `<div class="row" style="cursor:default">
+      <span class="body"><div class="stn">${esc(stationName(s.station))}</div><div class="name">${esc(s.name)}</div>
+      <label class="sw"><input type="checkbox" data-rer="${s.id}" ${s.reruns ? "checked" : ""}> ka kordused</label>
+      ${keepSelect(s)}</span>
+      <button class="btn" data-rm="${s.id}">Eemalda</button></div>`).join("")}</div>`
+      : '<div class="empty">Ühtegi saadet pole valitud.</div>'}
+    <h2>Üksikud episoodid</h2>
+    ${upcomingEps.length ? `<div class="list">${upcomingEps.map((e) => `<div class="row" style="cursor:default">
+      <span class="body"><div class="stn">${esc(stationName(e.station))}</div><div class="name">${esc(e.title)}</div><div class="sub">${dayLabel(dayKey(e.start))} ${fmtTime(e.start)}–${fmtTime(e.end)}</div></span>
+      <button class="btn" data-rme="${e.id}">Eemalda</button></div>`).join("")}</div>`
+      : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`;
+  main.querySelectorAll("[data-rm]").forEach((b) => b.onclick = async () => { config.shows = config.shows.filter((s) => s.id != b.dataset.rm); await saveConfig(); syncBrowserShows(); });
+  main.querySelectorAll("[data-rme]").forEach((b) => b.onclick = () => { config.episodes = config.episodes.filter((e) => e.id != b.dataset.rme); saveConfig(); });
+  bindKeep(main);
+  main.querySelectorAll("[data-rer]").forEach((c) => c.onchange = async () => { config.shows.find((s) => s.id == c.dataset.rer).reruns = c.checked; await saveConfig(); syncBrowserShows(); });
+}
+
+// --- taimerid ---
+function renderTimers(main) {
+  main.innerHTML = `<h2>Uus taimer</h2>
+    <div class="timer-form">
+      <div class="r"><select id="tSt">${stations.map((s) => `<option value="${s.id}" ${s.id === selectedStation ? "selected" : ""}>${esc(s.name)}</option>`).join("")}</select>
+        <input type="text" id="tName" placeholder="Nimi, nt Vikerhommik"></div>
+      <div class="wd">${[..."ETKNRLP"].map((d, i) => `<label><input type="checkbox" value="${i}" ${i < 5 ? "checked" : ""}><span>${d}</span></label>`).join("")}</div>
+      <div class="r"><input type="time" id="tStart" value="07:00"> – <input type="time" id="tEnd" value="09:00">
+        <button class="btn primary" id="tAdd">Lisa taimer</button></div>
+    </div>
+    <h2>Taimerid</h2>
+    ${config.timers.length ? `<div class="list">${config.timers.map((t) => `<div class="row" style="cursor:default">
+      <span class="body"><div class="stn">${esc(stationName(t.station))}</div><div class="name">${esc(t.name)}</div>
+      <div class="sub">${t.days.map((d) => "ETKNRLP"[d]).join(" ")} · ${t.start}–${t.end}</div>
+      ${keepSelect(t)}</span>
+      <button class="btn" data-rmt="${t.id}">Eemalda</button></div>`).join("")}</div>`
+      : '<div class="empty">Taimereid pole. Taimer salvestab valitud jaama kindlatel päevadel ja kellaaegadel – kava pole vaja.</div>'}`;
+  main.querySelectorAll("[data-rmt]").forEach((b) => b.onclick = () => { config.timers = config.timers.filter((t) => t.id != b.dataset.rmt); saveConfig(); });
+  $("#tAdd").onclick = async () => {
+    const days = [...main.querySelectorAll(".wd input:checked")].map((c) => +c.value);
+    const name = $("#tName").value.trim() || stationName($("#tSt").value);
+    if (!stationById($("#tSt").value)) return toast("Vali jaam");
+    if (!days.length || !$("#tStart").value || !$("#tEnd").value) return toast("Vali päevad ja kellaajad");
+    config.timers.push({ id: "timer:" + Math.random().toString(36).slice(2, 10), station: $("#tSt").value, name, days,
+      start: $("#tStart").value, end: $("#tEnd").value, keep: null, enabled: true });
+    await saveConfig(); toast("Taimer lisatud");
+  };
+  bindKeep(main);
+}
+
+function render() {
+  document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab));
+  const main = $("#main");
+  ({ kava: renderKava, rec: renderRec, shows: renderShows, timers: renderTimers })[tab](main);
+  renderStatus();
+}
+
+// --- pleier ---
+const audio = $("#audio");
+let current = null;
+const rates = [1, 1.25, 1.5, 1.75, 2];
+// --- otse-eeter ---
+let hls = null;
+function loadHlsJs() {
+  if (window.Hls) return Promise.resolve();
+  return new Promise((ok, fail) => { const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.6.16/hls.min.js"; s.onload = ok; s.onerror = fail; document.head.append(s); });
+}
+function stopHls() { if (hls) { hls.destroy(); hls = null; } }
+async function playLive(stationId) {
+  const st = stationById(stationId);
+  if (!st?.stream) return toast("Voo aadress puudub");
+  stopHls();
+  current = { onair: st.id, title: `${st.name} · otse-eeter`, key: null };
+  $("#player").classList.add("on", "onair");
+  $("#pTitle").textContent = current.title;
+  $("#pTime").textContent = "OTSE";
+  audio.playbackRate = 1; $("#pRate").textContent = "1×";
+  const isHls = st.stream.includes(".m3u8");
+  try {
+    if (isHls && !audio.canPlayType("application/vnd.apple.mpegurl")) {
+      await loadHlsJs();
+      hls = new Hls({ liveSyncDurationCount: 2 });
+      hls.loadSource(st.stream); hls.attachMedia(audio);
+    } else {
+      audio.src = st.stream + (isHls ? "" : (st.stream.includes("?") ? "&" : "?") + "t=" + Date.now());
+    }
+    await audio.play();
+  } catch (e) { console.error(e); toast("Otse-eetrit ei õnnestunud käivitada"); }
+  if ("mediaSession" in navigator) navigator.mediaSession.metadata = new MediaMetadata({ title: current.title, artist: st.name });
+  if (tab === "kava") render();
+}
+
+function play(r, startAt) {
+  stopHls();
+  $("#player").classList.remove("onair");
+  current = r;
+  audio.src = "/audio/" + r.key + (r.live ? "?t=" + Date.now() : "");
+  const pos = startAt ?? store.get("pos", {})[r.key];
+  audio.addEventListener("loadedmetadata", () => { if (pos && pos < (audio.duration - 5)) audio.currentTime = pos; }, { once: true });
+  audio.playbackRate = store.get("rate", 1);
+  audio.play();
+  $("#player").classList.add("on");
+  $("#pTitle").textContent = r.title;
+  if ("mediaSession" in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: r.title, artist: r.station_name || "Raadio Kuku", album: r.show,
+      artwork: r.thumbnail ? [{ src: r.thumbnail, sizes: "500x500" }] : [] });
+    navigator.mediaSession.setActionHandler("seekbackward", () => audio.currentTime -= 15);
+    navigator.mediaSession.setActionHandler("seekforward", () => audio.currentTime += 30);
+    navigator.mediaSession.setActionHandler("previoustrack", () => audio.currentTime -= 10);
+    navigator.mediaSession.setActionHandler("nexttrack", () => audio.currentTime += 30);
+  }
+}
+let lastSave = 0;
+audio.ontimeupdate = () => {
+  if (current?.onair) return;
+  if (!audio.duration || !isFinite(audio.duration)) return;
+  $("#pSeek").value = audio.currentTime / audio.duration * 1000;
+  $("#pTime").textContent = `${dur(audio.currentTime)} / ${dur(audio.duration)} · −${dur(audio.duration - audio.currentTime)}`;
+  if (current && Date.now() - lastSave > 5000) {
+    lastSave = Date.now();
+    const pos = store.get("pos", {}); pos[current.key] = Math.floor(audio.currentTime); store.set("pos", pos);
+  }
+};
+// pooleli salvestuse lõppu jõudes: lae juurde tulnud osa (või valmis fail) ja jätka samast kohast
+async function resumeLive(at, tries = 0) {
+  const prev = current;
+  try { recordings = await api("/api/recordings"); } catch {}
+  const name = prev.key.replace(/^(rec|live)\//, "");
+  const next = recordings.find((r) => !r.live && r.key === "rec/" + name) || recordings.find((r) => r.key === prev.key);
+  if (next && (!next.live || next.size > prev.size)) {
+    play(next, at);
+  } else if (tries < 20) {
+    $("#pTitle").textContent = prev.title + " · ootan salvestust…";
+    setTimeout(() => current === prev && resumeLive(at, tries + 1), 30e3);
+  }
+  if (tab === "rec") render();
+}
+audio.onended = () => {
+  if (current?.live) return resumeLive(audio.currentTime);
+  if (!current?.parts) return;
+  const next = recordings.find((r) => r.episode_start === current.episode_start && r.part === current.part + 1);
+  if (next) play(next);
+};
+const syncLiveBtn = () => { const g = $("#goLive"); if (!g) return;
+  const on = current?.onair === selectedStation && !audio.paused;
+  g.classList.toggle("playing", on); g.textContent = on ? "❚❚ Otse" : "▶ Otse"; };
+audio.onplay = () => { $("#pPlay").textContent = "❚❚"; syncLiveBtn(); };
+audio.onpause = () => { $("#pPlay").textContent = "▶"; syncLiveBtn(); };
+// otse-eetris pausilt tagasi -> hüppa uuesti eetrisse (mitte vana puhvri juurde)
+$("#pPlay").onclick = () => audio.paused ? (current?.onair ? playLive(current.onair) : audio.play()) : audio.pause();
+$("#pBack").onclick = () => audio.currentTime -= 15;
+$("#pFwd").onclick = () => audio.currentTime += 30;
+$("#pSeek").oninput = (e) => audio.duration && (audio.currentTime = e.target.value / 1000 * audio.duration);
+$("#pRate").textContent = store.get("rate", 1) + "×";
+$("#pRate").onclick = () => {
+  if (current?.onair) return;
+  const r = rates[(rates.indexOf(audio.playbackRate) + 1) % rates.length] || 1;
+  audio.playbackRate = r; store.set("rate", r); $("#pRate").textContent = r + "×";
+};
+
+// --- klaviatuur: ← 10 s tagasi, → 30 s edasi, tühik esita/peata, 1–4 kiirus, < > kiirus samm ---
+const setRate = (r) => { audio.playbackRate = r; store.set("rate", r); $("#pRate").textContent = r + "×"; toast(`Kiirus ${r}×`); };
+const KEY_RATES = { "1": 1, "2": 1.25, "3": 1.5, "4": 2 };
+document.addEventListener("keydown", (e) => {
+  if (!current || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (current.onair && e.key !== " " && e.key !== "k") return;
+  if (e.target.closest?.("input:not([type=range]), select, textarea")) return;
+  const step = [1, 1.25, 1.5, 2], i = step.indexOf(audio.playbackRate);
+  if (e.key === "ArrowLeft") audio.currentTime -= 10;
+  else if (e.key === "ArrowRight") audio.currentTime += 30;
+  else if (e.key === " " || e.key === "k") $("#pPlay").click();
+  else if (KEY_RATES[e.key]) setRate(KEY_RATES[e.key]);
+  else if (e.key === ">" || e.key === ".") setRate(step[Math.min(step.length - 1, i + 1)] ?? 1);
+  else if (e.key === "<" || e.key === ",") setRate(step[Math.max(0, i - 1)] ?? 1);
+  else return;
+  e.preventDefault();
+});
+
+// --- käivitus ---
+document.querySelectorAll("nav button").forEach((b) => b.onclick = () => { tab = b.dataset.tab; render(); if (tab !== "kava") loadRecordings(); });
+async function loadRecordings() { try { recordings = await api("/api/recordings"); render(); } catch (e) { console.error(e); } }
+async function loadStatus() { try { status = await api("/api/status"); renderStatus(); } catch {} }
+(async () => {
+  render();
+  const [s, c] = await Promise.allSettled([api("/api/schedule"), api("/api/config")]);
+  if (s.status === "fulfilled") {
+    stations = s.value.stations;
+    for (const st of stations.filter((x) => x.server)) schedules[st.id] = s.value.episodes.filter((e) => e.station === st.id);
+  } else toast("Kava laadimine ebaõnnestus");
+  if (c.status === "fulfilled") {
+    config = { shows: [], episodes: [], timers: [], ...c.value };
+    // vanad numbrilised Kuku ID-d
+    for (const x of config.shows) if (!String(x.id).includes(":")) Object.assign(x, { id: `kuku:${x.id}`, station: "kuku" });
+  }
+  render(); loadStatus(); loadRecordings();
+  syncBrowserShows().catch(console.error);
+  if (OFFLINE_OK) { navigator.serviceWorker.register("/sw.js").catch(console.error); loadOffline().then(render); }
+  const net = () => { $("#offline").classList.toggle("on", !navigator.onLine); render(); };
+  addEventListener("online", () => { net(); loadRecordings(); loadStatus(); });
+  addEventListener("offline", net); net();
+  setInterval(loadStatus, 30e3);
+})();
+</script>
+</body>
+</html>

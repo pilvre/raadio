@@ -1,0 +1,2 @@
+#!/bin/zsh
+exec "${0:A:h}/.venv/bin/python" "${0:A:h}/raadio.py" "$@"
