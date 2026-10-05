@@ -1,16 +1,7 @@
 // Salvestuste nimekiri (rec/*.json + pooleli live/*.json) ja kustutamine.
-const LIVE_STALE_MS = 10 * 60e3;
+import { listJson } from "../../lib/audio.js";
 
-async function listJson(env, prefix) {
-  const keys = [];
-  let cursor;
-  do {
-    const page = await env.KUKU.list({ prefix, cursor });
-    keys.push(...page.objects.map((o) => o.key).filter((k) => k.endsWith(".json")));
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor);
-  return (await Promise.all(keys.map(async (k) => (await env.KUKU.get(k))?.json()))).filter(Boolean);
-}
+const LIVE_STALE_MS = 10 * 60e3;
 
 export async function onRequestGet({ env }) {
   const [done, live] = await Promise.all([listJson(env, "rec/"), listJson(env, "live/")]);

@@ -487,7 +487,23 @@ function renderShows(main) {
     ${rows.length ? `<table>${rows.map(([name, g]) => `<tr><td>${esc(name)}</td>
       <td class="n">${g.n} × · ${g.dur < 3600 ? Math.round(g.dur / 60) + " min" : Math.round(g.dur / 360) / 10 + " h"}</td><td class="n">${fmtSize(g.size)}</td></tr>`).join("")}</table>` : ""}
   </div>`;
-  main.innerHTML = `${usage}<h2>Kõik saated</h2>
+  // podcasti-feed (autosse: AntennaPod / Android Auto, Apple Podcasts / CarPlay)
+  const tok = config.feed_token;
+  const feedUrl = (slug) => `${location.origin}/feed/${tok}/${slug}.xml`;
+  const feedShows = [...new Map(recordings.filter((r) => !r.live).map((r) => [String(r.show_id), r.show])).entries()];
+  const slugOf = (id) => String(id ?? "muu").replace(/[^\w-]+/g, "-");
+  const feedRow = (label, slug) => `<div class="row" style="cursor:default"><span class="body"><div class="name">${esc(label)}</div>
+    <div class="sub" style="white-space:normal;word-break:break-all;user-select:all">${esc(feedUrl(slug))}</div></span>
+    <button class="btn" data-copy="${esc(feedUrl(slug))}">Kopeeri</button></div>`;
+  const podcast = `<h2>Podcast (autos kuulamiseks)</h2>
+    ${tok ? `<div class="list">${feedRow("Kõik salvestused", "koik")}${feedShows.map(([id, name]) => feedRow(name, slugOf(id))).join("")}</div>
+      <p class="sub" style="font-size:13px;color:var(--muted);margin:10px 0">Lisa aadress podcastirakendusse: <b>AntennaPod</b> (Android, Android Auto) → ＋ → „Lisa podcast RSS-aadressiga“; <b>Apple Podcasts</b> (iPhone, CarPlay) → Teek → ⋯ → „Jälgi saadet URL-i kaudu“.
+      Rakendus laeb uued salvestused alla, kui telefon lehe aadressini ulatub (kohalikus režiimis koduvõrgus või Tailscale'iga) – autos kuulad neid ilma võrguta. Pocket Casts ja Overcast loevad feede oma serverite kaudu – neid ära kasuta.
+      Aadress sisaldab salajast võtit: ära jaga seda.</p>
+      <button class="btn" id="feedRotate">Vaheta võti</button> <button class="btn ghost" id="feedOff">Lülita välja</button>`
+      : `<p class="sub" style="font-size:14px;color:var(--muted);margin:0 0 10px">Privaatne podcasti-feed, et kuulata salvestusi podcastirakenduses – ka Android Autos ja CarPlay's.</p>
+      <button class="btn primary" id="feedOn">Lülita podcasti-feed sisse</button>`}`;
+  main.innerHTML = `${usage}${podcast}<h2>Kõik saated</h2>
     ${config.shows.length ? `<div class="list">${config.shows.map((s) => `<div class="row" style="cursor:default">
       <span class="body"><div class="stn">${esc(stationName(s.station))}</div><div class="name">${esc(s.name)}</div>
       <label class="sw"><input type="checkbox" data-rer="${s.id}" ${s.reruns ? "checked" : ""}> ka kordused</label>
@@ -499,6 +515,20 @@ function renderShows(main) {
       <span class="body"><div class="stn">${esc(stationName(e.station))}</div><div class="name">${esc(e.title)}</div><div class="sub">${dayLabel(dayKey(e.start))} ${fmtTime(e.start)}–${fmtTime(e.end)}</div></span>
       <button class="btn" data-rme="${e.id}">Eemalda</button></div>`).join("")}</div>`
       : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`;
+  const newToken = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  $("#feedOn") && ($("#feedOn").onclick = async () => { config.feed_token = newToken(); await saveConfig(); toast("Podcasti-feed sees"); });
+  $("#feedRotate") && ($("#feedRotate").onclick = async () => {
+    if (!confirm("Vaheta võti? Vanad podcasti-aadressid lakkavad töötamast – need tuleb rakendusse uuesti lisada.")) return;
+    config.feed_token = newToken(); await saveConfig(); toast("Uus võti");
+  });
+  $("#feedOff") && ($("#feedOff").onclick = async () => {
+    if (!confirm("Lülita podcasti-feed välja? Lisatud aadressid lakkavad töötamast.")) return;
+    delete config.feed_token; await saveConfig();
+  });
+  main.querySelectorAll("[data-copy]").forEach((b) => b.onclick = async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); toast("Kopeeritud"); }
+    catch { prompt("Kopeeri aadress:", b.dataset.copy); }
+  });
   main.querySelectorAll("[data-rm]").forEach((b) => b.onclick = async () => { config.shows = config.shows.filter((s) => s.id != b.dataset.rm); await saveConfig(); syncBrowserShows(); });
   main.querySelectorAll("[data-rme]").forEach((b) => b.onclick = () => { config.episodes = config.episodes.filter((e) => e.id != b.dataset.rme); saveConfig(); });
   bindKeep(main);

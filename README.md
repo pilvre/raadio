@@ -37,6 +37,8 @@ R2:                   Mac: salvestaja ──▶ Cloudflare R2 ◀── Cloudfla
 - **⬇ Laadi telefoni** – salvestus jääb brauserisse, leht ja pleier töötavad ka ilma võrguta (📱). Vajab **https**-i: R2/Pages režiimis alati olemas, kohalikus režiimis Tailscale'iga. iPhone'is lisa leht avaekraanile (Jaga → Lisa avaekraanile), muidu võib Safari andmed mõne nädala pärast kustutada.
 - **Salvesta failina** – MP3 telefoni Failid-äppi, töötab alati.
 
+**Autos (Android Auto, CarPlay).** „Minu saated“ → **Podcast** → lülita sisse ja lisa aadress podcastirakendusse: **AntennaPod** (Android) või **Apple Podcasts** (iPhone). Rakendus laeb salvestused telefoni, autos kuulad neid nagu podcaste. Feedi aadressis on salajane võti (`config.json` → `feed_token`), mis avab ainult salvestused; võtit saab vahetada. Ära kasuta Pocket Castsi ega Overcasti – need loevad feede oma serverite kaudu.
+
 ## Paigaldus
 
 Vaja: macOS või Windows 10/11 arvuti, mis on pidevalt sees.

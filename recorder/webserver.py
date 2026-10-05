@@ -82,9 +82,65 @@ def normalize_config(body):
                    "reruns": bool(s.get("reruns")), "keep": _keep(s.get("keep"))} for s in body.get("shows") or []],
         "episodes": eps,
         "timers": timers,
+        **({"feed_token": body["feed_token"]} if re.fullmatch(r"[\w-]{20,64}", str(body.get("feed_token") or "")) else {}),
         "synced": {_s(k, 40): _s(v, 40) for k, v in (body.get("synced") or {}).items()},
         "updated": now.isoformat(),
     }
+
+
+# --- podcasti-feed (sama mis web/lib/feed.js) ---------------------------------------------
+def _x(v):
+    return (str("" if v is None else v).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            .replace('"', "&quot;").replace("'", "&apos;"))
+
+
+def show_slug(i):
+    return re.sub(r"[^\w-]+", "-", str(i if i is not None else "muu"))
+
+
+def _hms(sec):
+    sec = max(0, round(sec or 0))
+    return f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
+
+
+def build_feed(recs, base, token, slug):
+    from email.utils import format_datetime
+    allf = slug == "koik"
+    items = sorted((r for r in recs if r.get("key", "").startswith("rec/") and (allf or show_slug(r.get("show_id")) == slug)),
+                   key=lambda r: r["start"], reverse=True)
+    title = "Raadiosalvestaja" if allf else f"{items[0]['show'] if items else 'Saade'} (Raadiosalvestaja)"
+    image = None if allf else next((r["thumbnail"] for r in items if r.get("thumbnail")), None)
+    out = []
+    for r in items:
+        st = parse_ts(r["start"])
+        t = ((r["show"] + " · ") if allf else "") + st.astimezone().strftime("%d.%m.%Y %H:%M")
+        if (r.get("parts") or 0) > 1:
+            t += f" · osa {r['part']}/{r['parts']}"
+        if r.get("incomplete"):
+            t += " (katkestatud)"
+        desc = " – ".join(v for v in (r.get("title"), r.get("station_name"), r.get("description")) if v)
+        out.append(f"""<item>
+  <title>{_x(t)}</title>
+  <description>{_x(desc)}</description>
+  <guid isPermaLink="false">{_x(r['key'])}</guid>
+  <pubDate>{format_datetime(st.astimezone(timezone.utc), usegmt=True)}</pubDate>
+  <enclosure url="{_x(f'{base}/feed/{token}/audio/{r["key"]}')}" length="{r.get('size') or 0}" type="audio/mpeg"/>
+  <itunes:duration>{_hms(r.get('duration'))}</itunes:duration>""" + (f'\n  <itunes:image href="{_x(r["thumbnail"])}"/>' if r.get("thumbnail") else "") + "\n</item>")
+    img = (f'\n<itunes:image href="{_x(image)}"/>\n<image><url>{_x(image)}</url><title>{_x(title)}</title><link>{_x(base)}</link></image>'
+           if image else "")
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+<title>{_x(title)}</title>
+<link>{_x(base)}</link>
+<atom:link href="{_x(f'{base}/feed/{token}/{slug}.xml')}" rel="self" type="application/rss+xml"/>
+<description>Isiklikud raadiosalvestused – privaatne feed, ära jaga.</description>
+<language>et</language>
+<itunes:block>Yes</itunes:block>
+<itunes:explicit>false</itunes:explicit>{img}
+{chr(10).join(out)}
+</channel>
+</rss>"""
 
 
 def make_handler(store, auth):
@@ -129,9 +185,15 @@ def make_handler(store, auth):
             return False
 
         def route(self, method):
+            url = urlparse(self.path)
+            # podcasti-feed: salajane võti asendab parooli (ainult salvestused, mitte valikud)
+            if url.path.startswith("/feed/") and method in ("GET", "HEAD"):
+                try:
+                    return self.feed(url, head=method == "HEAD")
+                except BrokenPipeError:
+                    return
             if not self.authorized():
                 return self.send_text("Sisselogimine vajalik", 401)
-            url = urlparse(self.path)
             q = parse_qs(url.query)
             p = url.path
             try:
@@ -238,6 +300,29 @@ def make_handler(store, auth):
                         break
                     self.wfile.write(chunk)
                     left -= len(chunk)
+
+        def feed(self, url, head=False):
+            parts = url.path.split("/")[2:]  # [token, ...]
+            real = (store.get_json("config.json", {}) or {}).get("feed_token") or ""
+            if not parts or not real or not hmac.compare_digest(parts[0], real):
+                return self.send_text("not found", 404)
+            token, rest = parts[0], parts[1:]
+            if rest[:1] == ["audio"]:
+                return self.audio("/".join(rest[1:]), {}, head=head)
+            m = re.fullmatch(r"([\w-]+)\.xml", "/".join(rest))
+            if not m:
+                return self.send_text("not found", 404)
+            host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "localhost"
+            proto = self.headers.get("X-Forwarded-Proto") or ("https" if host.split(":")[0].endswith(".ts.net") else "http")
+            recs = [mm for k, _ in store.list("rec/") if k.endswith(".json") and (mm := store.get_json(k, None))]
+            body = build_feed(recs, f"{proto}://{host}", token, m[1]).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/rss+xml; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            if not head:
+                self.wfile.write(body)
 
         def static(self, p, head=False):
             rel = "index.html" if p in ("", "/") else p.lstrip("/")

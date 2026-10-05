@@ -41,6 +41,7 @@ export async function onRequestPut({ env, request }) {
         days: [...new Set((t.days || []).map(Number).filter((d) => d >= 0 && d <= 6))].sort(),
         start: t.start, end: t.end, keep: keepOf(t.keep), enabled: t.enabled !== false,
       })),
+    feed_token: /^[\w-]{20,64}$/.test(body.feed_token || "") ? body.feed_token : undefined,
     synced: Object.fromEntries(Object.entries(body.synced || {}).map(([k, v]) => [str(k, 40), str(v, 40)])),
     updated: new Date().toISOString(),
   };

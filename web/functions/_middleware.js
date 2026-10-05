@@ -10,6 +10,8 @@ async function same(a, b) {
 export async function onRequest({ request, env, next }) {
   // ainult lokaalseks arenduseks (.dev.vars), mitte kunagi Pages seadetes
   if (env.DEV_NO_AUTH === "1" && new URL(request.url).hostname === "localhost") return next();
+  // podcasti-feed kontrollib ise salajast võtit (functions/feed)
+  if (new URL(request.url).pathname.startsWith("/feed/")) return next();
   if (!env.AUTH_USER || !env.AUTH_PASS) {
     return new Response("AUTH_USER / AUTH_PASS pole seadistatud", { status: 503 });
   }

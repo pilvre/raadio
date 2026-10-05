@@ -42,6 +42,7 @@ R2:                  arvuti = salvestaja ──▶ Cloudflare R2 ◀── Cloud
 - `schedule.json` – serveripoolne kava (praegu Kuku).
 - `status.json` – salvestaja olek (uuendub ~20 s järel; veebileht näitab „Salvestaja vaikib“, kui üle 3 min vana).
 - `rec/<kuupäev>_<HHMM>_<jaam>_<saade>.mp3` + `.json` (metaandmed) – valmis salvestused.
+- `config.json` → `feed_token` – privaatse podcasti-feedi võti: `/feed/<võti>/koik.xml`, `/feed/<võti>/<saate-slug>.xml`, helifailid `/feed/<võti>/audio/rec/…`. Võti asendab parooli ainult nende aadresside jaoks (`web/functions/feed/`, `recorder/webserver.py`). Soovita AntennaPodi / Apple Podcastsi; mitte serveripõhiseid rakendusi (Pocket Casts, Overcast), sest need lekitaksid võtme ja ei ulatu kohtvõrku.
 - `live/…` – pooleli salvestus (uueneb iga 2 min, et seda saaks kuulata); kokkujooksmisel päästetakse sildiga „katkestatud“.
 
 ### Käitumine
@@ -96,6 +97,7 @@ Logi: macOS `~/Library/Logs/raadiosalvestaja.log`, Windows `%LOCALAPPDATA%\Raadi
 | Telefon ei ava kohalikku lehte | sama Wi-Fi? Windows: tulemüüri reegel `Raadiosalvestaja` (privaatvõrk); `raadio url` õige IP? |
 | ERR-i kava ei lae | laeb brauseris – kontrolli brauseri konsooli; serveri poolt seda ei laeta (robotikaitse) |
 | Salvestus tühi / katkeb | `raadio test 20 <jaam>`; voo URL muutunud? (`stations.json`, Kuku jaoks ka `KUKU_STREAM_URL`) |
+| Podcastirakendus ei uuenda | kohalikus režiimis peab telefon lehe aadressini ulatuma (koduvõrk/Tailscale); kas võti vahetati? (`raadio url`, „Minu saated“ → Podcast) |
 | Telefoni laadimise nupp puudub | vajab https-i (Pages või Tailscale); tavalise `http://…:8788` peal saab ainult MP3 failina salvestada |
 | macOS: „Operation not permitted“ | välisel kettal: luba Pythonile „Removable Volumes“ (Süsteemiseaded → Privaatsus) |
 
