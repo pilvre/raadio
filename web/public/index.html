@@ -360,12 +360,14 @@ function openSheet(ep) {
   $("#sEp") && ($("#sEp").onclick = async () => {
     config.episodes = epOn ? config.episodes.filter((e) => e.id !== ep.id)
       : [...config.episodes, { ...ep }];
-    close(); await saveConfig(); toast(epOn ? "Eemaldatud" : "Salvestatakse");
+    await saveConfig(); openSheet(ep); toast(epOn ? "Eemaldatud" : "Salvestatakse");
   });
   $("#sShow").onclick = async () => {
     config.shows = sh ? config.shows.filter((s) => s.id !== ep.show.id)
       : [...config.shows, { id: ep.show.id, name: ep.show.name, station: ep.station, reruns: false }];
-    close(); await saveConfig(); await syncBrowserShows(); toast(sh ? "Saade eemaldatud" : "Kõik saated salvestatakse");
+    // dialoog jääb lahti: tellimisel ilmuvad kohe korduste ja säilituse valikud
+    await saveConfig(); openSheet(ep); toast(sh ? "Saade eemaldatud" : "Kõik saated salvestatakse – vali allpool kordused ja säilitus");
+    syncBrowserShows().then(() => $("#sheet").classList.contains("open") && openSheet(ep));
   };
   $("#sRer") && ($("#sRer").onchange = async (e) => { sh.reruns = e.target.checked; await saveConfig(); await syncBrowserShows(); openSheet(ep); });
   bindKeep(p, () => { openSheet(ep); toast("Salvestatud"); });
