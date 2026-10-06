@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Raadiosalvestaja – ühe käsu paigaldus macOS-ile:
+# Raadiosalvesti – ühe käsu paigaldus macOS-ile:
 #   curl -fsSL https://raadio.mastering.ee/install | zsh
 # Laeb tööriista kausta ~/Raadiosalvestaja, kontrollib ffmpeg-i ja Pythoni, käivitab paigaldaja.
 set -e
@@ -10,7 +10,7 @@ main() {
   REF=${RAADIO_REF:-main}
   APP=${RAADIO_DIR:-$HOME/Raadiosalvestaja}
 
-  echo "Raadiosalvestaja – paigaldus"
+  echo "Raadiosalvesti – paigaldus"
   if [ "$(uname)" != Darwin ]; then
     echo "See paigaldaja on macOS-ile. Windowsis (PowerShell): irm https://raadio.mastering.ee/install.ps1 | iex"
     exit 1

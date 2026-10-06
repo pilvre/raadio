@@ -1,4 +1,4 @@
-// Jaamad + serveripoolne kava (salvestaja kirjutab R2-sse schedule.json).
+// Jaamad + serveripoolne kava (salvesti kirjutab R2-sse schedule.json).
 // Jaamad, mille kava pole serveris (nt ERR), laeb brauser ise.
 import STATIONS from "../../stations.json";
 

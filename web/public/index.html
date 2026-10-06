@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Raadio">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%23e5484d'/><circle cx='16' cy='16' r='6' fill='white'/></svg>">
-<title>Raadiosalvestaja</title>
+<title>Raadiosalvesti</title>
 <style>
   :root {
     --bg: #f6f6f4; --surface: #fff; --text: #17181b; --muted: #6b6e76; --line: #e3e3df;
@@ -132,7 +132,7 @@
 </head>
 <body>
 <header>
-  <h1>Raadiosalvestaja</h1>
+  <h1>Raadiosalvesti</h1>
   <div id="status"><span class="dot"></span>…</div>
   <nav>
     <button data-tab="kava" class="on">Kava</button>
@@ -279,9 +279,9 @@ function bindKeep(root, after) {
 // --- staatus ---
 function renderStatus() {
   const el = $("#status");
-  if (!status) { el.className = "err"; el.innerHTML = '<span class="dot"></span>Salvestaja pole veel ühendust võtnud'; return; }
+  if (!status) { el.className = "err"; el.innerHTML = '<span class="dot"></span>Salvesti pole veel ühendust võtnud'; return; }
   const age = (Date.now() - Date.parse(status.updated)) / 60e3;
-  if (age > 3) { el.className = "err"; el.innerHTML = `<span class="dot"></span>Salvestaja vaikib (${Math.round(age)} min)`; return; }
+  if (age > 3) { el.className = "err"; el.innerHTML = `<span class="dot"></span>Salvesti vaikib (${Math.round(age)} min)`; return; }
   if (status.recording?.length) {
     const r = status.recording[0];
     el.className = "rec";
@@ -313,7 +313,7 @@ function renderKava(main) {
       $("#retry").onclick = () => { delete loadFailed[selectedStation]; render(); };
       return;
     }
-    main.innerHTML = chips + `<div class="empty">${st && st.server ? "Kava pole veel salvestajalt saabunud." : "Laen kava…"}</div>`;
+    main.innerHTML = chips + `<div class="empty">${st && st.server ? "Kava pole veel salvestilt saabunud." : "Laen kava…"}</div>`;
     bindStations(main);
     if (st && !st.server && !loading[st.id]) {
       const id = st.id;

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Raadiosalvestaja (Kuku, ERR-i jaamad, ...).
+"""Raadiosalvesti (Kuku, ERR-i jaamad, ...).
 
 Loeb R2-st config.json (mida veebiliides muudab), võrdleb seda jaamade saatekavaga
 ja salvestab valitud saated otse-eetrist mono-MP3-na. Ühtlustatud kava kirjutatakse
 R2-sse (schedule.json), veebiliides loeb seda. Valmis fail + metaandmed
 laetakse R2 bucketisse (rec/...). Iga tsükli järel kirjutatakse status.json,
-et veebiliides näeks, kas salvestaja on elus.
+et veebiliides näeks, kas salvesti on elus.
 """
 
 import json
@@ -640,7 +640,7 @@ class Recorder:
 
     def run(self):
         self.kill_orphans()
-        log(f"salvestaja käivitus ({self.store.kind}: {getattr(self.store, 'root', None) or getattr(self.store, 'bucket', '')})")
+        log(f"salvesti käivitus ({self.store.kind}: {getattr(self.store, 'root', None) or getattr(self.store, 'bucket', '')})")
         self.start_web()
         while True:
             try:

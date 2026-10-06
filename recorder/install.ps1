@@ -1,4 +1,4 @@
-﻿# Raadiosalvestaja paigaldus Windowsile: venv, seaded, taustateenus (Task Scheduler), `raadio` käsk.
+﻿# Raadiosalvesti paigaldus Windowsile: venv, seaded, taustateenus (Task Scheduler), `raadio` käsk.
 # Mitteinteraktiivselt (nt CI): $env:RAADIO_NONINTERACTIVE=1; $env:RAADIO_MODE="local"; $env:RAADIO_PASS="..."
 $ErrorActionPreference = "Stop"
 $Dir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -92,7 +92,7 @@ $trigger.Repetition = (New-ScheduledTaskTrigger -Once -At (Get-Date) -Repetition
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable `
   -ExecutionTimeLimit (New-TimeSpan -Seconds 0) -MultipleInstances IgnoreNew
 Register-ScheduledTask -TaskName $Task -Action $action -Trigger $trigger -Settings $settings `
-  -Description "Raadiosalvestaja – salvestab valitud raadiosaateid" -Force | Out-Null
+  -Description "Raadiosalvesti – salvestab valitud raadiosaateid" -Force | Out-Null
 Start-ScheduledTask -TaskName $Task
 
 # käsk `raadio` (WindowsApps kaust on vaikimisi PATH-is)
@@ -132,4 +132,4 @@ if ($u -like "http*") {
   }
 }
 Write-Host ""
-Write-Host "  Salvestaja oleku vaatamiseks ava uus PowerShelli aken ja kirjuta: raadio"
+Write-Host "  Salvesti oleku vaatamiseks ava uus PowerShelli aken ja kirjuta: raadio"

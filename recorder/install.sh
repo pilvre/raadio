@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Raadiosalvestaja paigaldus macOS-ile: venv, seaded, launchd teenus, `raadio` käsk.
+# Raadiosalvesti paigaldus macOS-ile: venv, seaded, launchd teenus, `raadio` käsk.
 # Mitteinteraktiivselt (nt CI): RAADIO_MODE=local|r2 RAADIO_PASS=... ./install.sh
 set -e
 DIR="${0:A:h}"
@@ -79,7 +79,7 @@ launchctl bootstrap gui/$(id -u) "$PLIST"
 
 chmod +x "$DIR/raadio" "$DIR/kuku"
 if ! grep -q "alias raadio=" ~/.zshrc 2>/dev/null; then
-  printf '\n# Raadiosalvestaja\nalias raadio="\\"%s/raadio\\""\n' "$DIR" >> ~/.zshrc
+  printf '\n# Raadiosalvesti\nalias raadio="\\"%s/raadio\\""\n' "$DIR" >> ~/.zshrc
   echo "→ Käsk 'raadio' lisatud (ava uus terminal)"
 fi
 sleep 4
@@ -95,4 +95,4 @@ case "$u" in http*)
   fi;;
 esac
 echo
-echo "  Salvestaja oleku vaatamiseks ava uus Terminali aken ja kirjuta: raadio"
+echo "  Salvesti oleku vaatamiseks ava uus Terminali aken ja kirjuta: raadio"

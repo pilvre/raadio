@@ -20,7 +20,7 @@ export function buildFeed(recs, { base, token, slug, name }) {
     .filter((r) => r.key?.startsWith("rec/") && (all || showSlug(r.show_id) === slug))
     .sort((a, b) => b.start.localeCompare(a.start));
   const first = items[0];
-  const title = all ? "Raadiosalvestaja" : `${first?.show || name || "Saade"} (Raadiosalvestaja)`;
+  const title = all ? "Raadiosalvesti" : `${first?.show || name || "Saade"} (Raadiosalvesti)`;
   const image = all ? null : items.find((r) => r.thumbnail)?.thumbnail;
   const self = `${base}/feed/${token}/${slug}.xml`;
   const body = items.map((r) => {

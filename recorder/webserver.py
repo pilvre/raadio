@@ -110,7 +110,7 @@ def build_feed(recs, base, token, slug, name=None):
     allf = slug == "koik"
     items = sorted((r for r in recs if r.get("key", "").startswith("rec/") and (allf or show_slug(r.get("show_id")) == slug)),
                    key=lambda r: r["start"], reverse=True)
-    title = "Raadiosalvestaja" if allf else f"{items[0]['show'] if items else (name or 'Saade')} (Raadiosalvestaja)"
+    title = "Raadiosalvesti" if allf else f"{items[0]['show'] if items else (name or 'Saade')} (Raadiosalvesti)"
     image = None if allf else next((r["thumbnail"] for r in items if r.get("thumbnail")), None)
     out = []
     for r in items:
@@ -149,7 +149,7 @@ def make_handler(store, auth):
     stations_def = json.loads(STATIONS_FILE.read_text(encoding="utf-8"))
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "Raadiosalvestaja"
+        server_version = "Raadiosalvesti"
 
         def log_message(self, *a):  # vaikne
             pass
@@ -170,7 +170,7 @@ def make_handler(store, auth):
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             if status == 401:
-                self.send_header("WWW-Authenticate", 'Basic realm="Raadiosalvestaja", charset="UTF-8"')
+                self.send_header("WWW-Authenticate", 'Basic realm="Raadiosalvesti", charset="UTF-8"')
             self.end_headers()
             self.wfile.write(body)
 

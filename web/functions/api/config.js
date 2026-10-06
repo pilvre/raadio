@@ -1,4 +1,4 @@
-// Salvestusvalikud (config.json R2-s), loeb ja kirjutab ka Maci salvestaja.
+// Salvestusvalikud (config.json R2-s), loeb ja kirjutab ka Maci salvesti.
 //   shows:    [{id, name, station, reruns, keep}]   – "salvesta kõik saated"
 //   episodes: [{id, station, start, end, title, rerun, description, show, auto}]
 //             – konkreetsed ajad; auto = brauser koostas saate tellimuse põhjal (ERR)

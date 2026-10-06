@@ -26,6 +26,6 @@ export async function onRequest({ request, env, next }) {
   }
   return new Response("Sisselogimine vajalik", {
     status: 401,
-    headers: { "www-authenticate": 'Basic realm="Kuku salvestaja", charset="UTF-8"' },
+    headers: { "www-authenticate": 'Basic realm="Raadiosalvesti", charset="UTF-8"' },
   });
 }

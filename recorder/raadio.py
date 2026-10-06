@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Raadiosalvestaja juhtkäsk (Mac ja Windows).
+"""Raadiosalvesti juhtkäsk (Mac ja Windows).
 
     raadio            olek: kas töötab, mida salvestab, veebilehe aadress, viimased logiread
     raadio start|stop|restart
@@ -156,7 +156,7 @@ def status():
     if st:
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(st["updated"])).total_seconds() / 60
         if on and age > 3:
-            print(f"  ⚠ salvestaja pole {round(age)} min ühendust võtnud")
+            print(f"  ⚠ salvesti pole {round(age)} min ühendust võtnud")
         for r in st.get("recording") or []:
             print(f"  ⏺ salvestab: {r['title']} ({round((r.get('bytes') or 0) / 1048576)} MB)")
         for n in (st.get("next") or [])[:3]:

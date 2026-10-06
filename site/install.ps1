@@ -1,4 +1,4 @@
-# Raadiosalvestaja - one-command installer for Windows 10/11 (PowerShell):
+# Raadiosalvesti - one-command installer for Windows 10/11 (PowerShell):
 #   irm https://raadio.mastering.ee/install.ps1 | iex
 # Installs Python + ffmpeg via winget if missing, downloads the tool to
 # %LOCALAPPDATA%\Raadiosalvestaja\app and runs recorder\install.ps1.
@@ -9,7 +9,7 @@ $Ref  = if ($env:RAADIO_REF)  { $env:RAADIO_REF }  else { "main" }
 $Root = Join-Path $env:LOCALAPPDATA "Raadiosalvestaja"
 $App  = Join-Path $Root "app"
 
-Write-Host "Raadiosalvestaja - paigaldus"
+Write-Host "Raadiosalvesti - paigaldus"
 
 function Test-Py {
   foreach ($try in @({ & py -3 -c "import sys; assert sys.version_info >= (3, 9)" 2>$null }, { & python -c "import sys; assert sys.version_info >= (3, 9); assert 'WindowsApps' not in sys.executable" 2>$null })) {

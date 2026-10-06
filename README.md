@@ -1,6 +1,6 @@
-# Raadiosalvestaja
+# Raadiosalvesti
 
-Isiklik ajanihke-salvestaja Eesti raadiojaamade **vabalt kättesaadavale otse-eetrile** – nagu vanasti kassettmakk raadio kõrval. Vali kavast saated või sea taimer, Mac salvestab need mono-MP3-na – oma kettale või soovi korral Cloudflare R2-sse – ja hiljem kuulad neid telefonist.
+Isiklik ajanihke-salvesti Eesti raadiojaamade **vabalt kättesaadavale otse-eetrile** – nagu vanasti kassettmakk raadio kõrval. Vali kavast saated või sea taimer, Mac salvestab need mono-MP3-na – oma kettale või soovi korral Cloudflare R2-sse – ja hiljem kuulad neid telefonist.
 
 Jaamad: Raadio Kuku, Vikerraadio, Raadio 2, Klassikaraadio, Raadio 4, Raadio Tallinn (lisa uusi failis [`web/stations.json`](web/stations.json)).
 
@@ -21,17 +21,17 @@ Jaamad: Raadio Kuku, Vikerraadio, Raadio 2, Klassikaraadio, Raadio 4, Raadio Tal
 
 ## Ülesehitus
 
-Kaks režiimi – veebileht ja salvestaja on mõlemas samad:
+Kaks režiimi – veebileht ja salvesti on mõlemas samad:
 
 ```
-Kohalik (vaikimisi):  Mac: salvestaja + veebiserver + kaust ~/Music/Raadiosalvestaja  ◀── telefon (koduvõrk / Tailscale)
-R2:                   Mac: salvestaja ──▶ Cloudflare R2 ◀── Cloudflare Pages (web/)  ◀── telefon (kõikjal)
+Kohalik (vaikimisi):  Mac: salvesti + veebiserver + kaust ~/Music/Raadiosalvestaja  ◀── telefon (koduvõrk / Tailscale)
+R2:                   Mac: salvesti ──▶ Cloudflare R2 ◀── Cloudflare Pages (web/)  ◀── telefon (kõikjal)
 ```
 
 - **Kohalik:** pilve pole vaja. Mac jagab lehte ise (`http://<mac>.local:8788`). Kodust väljas ligipääsuks vt [Tailscale](#kodust-väljas-tailscale).
 - **R2:** salvestused Cloudflare R2-s, leht Cloudflare Pages'is parooli taga, kuulamine kõikjal.
 
-**Kava allikad.** Kuku kava laeb salvestaja (`schedule.json`). ERR-i kava-API on robotikaitse taga, seetõttu laeb ERR-i kava veebileht sinu brauseris (nagu ERR-i enda leht) ja kirjutab valitud saated konkreetsete kellaaegadena `config.json`-i. „Salvesta kõik saated“ ERR-i jaamades uueneb seega iga kord, kui lehe avad – ava see vähemalt kord nädalas. Taimerid töötavad ilma kavata.
+**Kava allikad.** Kuku kava laeb salvesti (`schedule.json`). ERR-i kava-API on robotikaitse taga, seetõttu laeb ERR-i kava veebileht sinu brauseris (nagu ERR-i enda leht) ja kirjutab valitud saated konkreetsete kellaaegadena `config.json`-i. „Salvesta kõik saated“ ERR-i jaamades uueneb seega iga kord, kui lehe avad – ava see vähemalt kord nädalas. Taimerid töötavad ilma kavata.
 
 **Telefoni laadimine.** Salvestuse menüüst (⋯):
 - **⬇ Laadi telefoni** – salvestus jääb brauserisse, leht ja pleier töötavad ka ilma võrguta (📱). Vajab **https**-i: R2/Pages režiimis alati olemas, kohalikus režiimis Tailscale'iga. iPhone'is lisa leht avaekraanile (Jaga → Lisa avaekraanile), muidu võib Safari andmed mõne nädala pärast kustutada.
@@ -42,7 +42,7 @@ R2:                   Mac: salvestaja ──▶ Cloudflare R2 ◀── Cloudfla
 <details><summary><b>AntennaPod lühidalt</b> (Android, Android Auto)</summary>
 
 1. Paigalda [AntennaPod](https://antennapod.org) (Google Play või F-Droid).
-2. Raadiosalvestaja lehel: **Minu saated → Podcast → Kopeeri** (kõik salvestused või üks saade).
+2. Raadiosalvesti lehel: **Minu saated → Podcast → Kopeeri** (kõik salvestused või üks saade).
 3. AntennaPodis: **＋ (Lisa podcast) → „Lisa podcast RSS-aadressiga“** → kleebi aadress → **Telli**.
 4. **Seaded → Allalaadimised:**
    - **Automaatne allalaadimine** sees, **ainult Wi-Fi-s** (soovi korral Wi-Fi filtriga ainult koduvõrk)
@@ -90,7 +90,7 @@ Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removab
 Vaja lisaks: Node.js, Cloudflare konto.
 
 1. **R2:** Cloudflare → R2 → loo bucket (nt `raadio`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
-2. **Salvestaja:** paigaldaja → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita paigaldaja uuesti.
+2. **Salvesti:** paigaldaja → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita paigaldaja uuesti.
 3. **Veebileht:** **Workers & Pages → Create → Pages → Connect to Git** → see repo
    - Build command: *(tühi)*, Build output: `public`, Root directory: `web`
    - Kui bucketi nimi pole `raadio`, muuda `web/wrangler.toml` (binding `KUKU`)
@@ -109,7 +109,7 @@ Ilma `AUTH_USER`/`AUTH_PASS` saladusteta ei lase leht kedagi sisse.
 | `raadio test [sek] [jaam]` | testsalvestus, nt `raadio test 30 vikerraadio` |
 | `raadio update` | uuenda uusimale versioonile (seaded ja salvestused jäävad alles) |
 
-**Uuendused.** Salvestaja kontrollib kord 12 tunni jooksul faili `https://raadio.mastering.ee/version.json` (muid andmeid ei saadeta). Kui on uuem versioon, näitavad seda veebileht („⬆ Uuendus saadaval“) ja `raadio`. Uuenda käsuga `raadio update` – see hoiatab, kui salvestus parasjagu käib. Kontrolli saab välja lülitada: `UPDATE_CHECK=0` seadete failis.
+**Uuendused.** Salvesti kontrollib kord 12 tunni jooksul faili `https://raadio.mastering.ee/version.json` (muid andmeid ei saadeta). Kui on uuem versioon, näitavad seda veebileht („⬆ Uuendus saadaval“) ja `raadio`. Uuenda käsuga `raadio update` – see hoiatab, kui salvestus parasjagu käib. Kontrolli saab välja lülitada: `UPDATE_CHECK=0` seadete failis.
 
 Taustateenus: macOS-is launchd (`~/Library/LaunchAgents/ee.raadiosalvestaja.plist`), Windowsis Task Scheduler (`Raadiosalvestaja`).
 Logi: macOS `~/Library/Logs/raadiosalvestaja.log`, Windows `%LOCALAPPDATA%\Raadiosalvestaja\salvestaja.log`.
