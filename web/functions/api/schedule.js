@@ -10,7 +10,7 @@ export async function onRequestGet({ env }) {
     server: (data.server_stations || []).includes(id),
   }));
   return Response.json(
-    { stations, updated: data.updated || null, episodes: data.episodes || [] },
+    { stations, storage: "r2", updated: data.updated || null, episodes: data.episodes || [] },
     { headers: { "cache-control": "no-store" } },
   );
 }

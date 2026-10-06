@@ -180,7 +180,7 @@ const store = { get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? 
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
 let tab = "kava", config = { shows: [], episodes: [], timers: [] }, recordings = [], status = null;
-let selectedDay = null, stations = [], schedules = {}, loading = {}, loadFailed = {};
+let selectedDay = null, stations = [], schedules = {}, loading = {}, loadFailed = {}, storageKind = "r2";
 let selectedStation = store.get("station", "kuku");
 const stationById = (id) => stations.find((s) => s.id === id);
 const stationName = (id) => stationById(id)?.name || id || "";
@@ -479,7 +479,7 @@ function renderRec(main) {
 
 // kokkurulluv jaotis; lahti/kinni olek jääb selles brauseris meelde
 const sec = (id, title, html, count) => {
-  const open = store.get("sec:" + id, true);
+  const open = store.get("sec:" + id, false);
   return `<details class="sec" data-sec="${id}" ${open ? "open" : ""}><summary><h2>${esc(title)}${count != null ? ` <span class="cnt">(${count})</span>` : ""}</h2></summary>${html}</details>`;
 };
 const bindSecs = (root) => root.querySelectorAll("details.sec").forEach((d) => d.addEventListener("toggle", () => store.set("sec:" + d.dataset.sec, d.open)));
@@ -496,12 +496,13 @@ function renderShows(main) {
   }
   const total = Object.values(byShow).reduce((a, g) => a + g.size, 0);
   const rows = Object.entries(byShow).sort((a, b) => b[1].size - a[1].size);
-  const usage = `<h2>Maht R2-s</h2><div class="usage">
-    <div class="total">${fmtSize(total)} <span>${recordings.length} salvestust · tasuta 10 GB-st ${(total / FREE * 100).toFixed(1)}%</span></div>
-    <div class="bar"><i style="width:${Math.min(100, total / FREE * 100)}%"></i></div>
+  const usageHtml = `<div class="usage">
+    <div class="total">${fmtSize(total)} <span>${recordings.length} salvestust${storageKind === "r2" ? ` · R2 tasuta 10 GB-st ${(total / FREE * 100).toFixed(1)}%` : " · arvuti kettal"}</span></div>
+    ${storageKind === "r2" ? `<div class="bar"><i style="width:${Math.min(100, total / FREE * 100)}%"></i></div>` : ""}
     ${rows.length ? `<table>${rows.map(([name, g]) => `<tr><td>${esc(name)}</td>
       <td class="n">${g.n} × · ${g.dur < 3600 ? Math.round(g.dur / 60) + " min" : Math.round(g.dur / 360) / 10 + " h"}</td><td class="n">${fmtSize(g.size)}</td></tr>`).join("")}</table>` : ""}
   </div>`;
+  const usage = sec("usage", "Maht", usageHtml, fmtSize(total));
   // podcasti-feed (autosse: AntennaPod / Android Auto, Apple Podcasts / CarPlay)
   const tok = config.feed_token;
   const feedUrl = (slug) => `${location.origin}/feed/${tok}/${slug}.xml`;
@@ -523,18 +524,20 @@ function renderShows(main) {
       <button class="btn" id="feedRotate">Vaheta võti</button> <button class="btn ghost" id="feedOff">Lülita välja</button>`
       : `<p class="sub" style="font-size:14px;color:var(--muted);margin:0 0 10px">Privaatne podcasti-feed, et kuulata salvestusi podcastirakenduses – ka Android Autos ja CarPlay's.</p>
       <button class="btn primary" id="feedOn">Lülita podcasti-feed sisse</button>`}`, tok ? feedShows.length + 1 : null);
-  main.innerHTML = `${usage}${podcast}${sec("shows", "Kõik saated", `
+  main.innerHTML = `${sec("shows", "Kõik saated", `
     ${config.shows.length ? `<div class="list">${config.shows.map((s) => `<div class="row" style="cursor:default">
       <span class="body"><div class="stn">${esc(stationName(s.station))}</div><div class="name">${esc(s.name)}</div>
       <label class="sw"><input type="checkbox" data-rer="${s.id}" ${s.reruns ? "checked" : ""}> ka kordused</label>
       ${keepSelect(s)}</span>
       <button class="btn" data-rm="${s.id}">Eemalda</button></div>`).join("")}</div>`
       : '<div class="empty">Ühtegi saadet pole valitud.</div>'}`, config.shows.length)}
+    ${podcast}
     ${sec("episodes", "Üksikud episoodid", `
     ${upcomingEps.length ? `<div class="list">${upcomingEps.map((e) => `<div class="row" style="cursor:default">
       <span class="body"><div class="stn">${esc(stationName(e.station))}</div><div class="name">${esc(e.title)}</div><div class="sub">${dayLabel(dayKey(e.start))} ${fmtTime(e.start)}–${fmtTime(e.end)}</div></span>
       <button class="btn" data-rme="${e.id}">Eemalda</button></div>`).join("")}</div>`
-      : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`, upcomingEps.length)}`;
+      : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`, upcomingEps.length)}
+    ${usage}`;
   bindSecs(main);
   const newToken = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(16).padStart(2, "0")).join("");
   $("#feedOn") && ($("#feedOn").onclick = async () => { config.feed_token = newToken(); await saveConfig(); toast("Podcasti-feed sees"); });
@@ -724,6 +727,7 @@ async function loadStatus() { try { status = await api("/api/status"); renderSta
   const [s, c] = await Promise.allSettled([api("/api/schedule"), api("/api/config")]);
   if (s.status === "fulfilled") {
     stations = s.value.stations;
+    storageKind = s.value.storage || "r2";
     for (const st of stations.filter((x) => x.server)) schedules[st.id] = s.value.episodes.filter((e) => e.station === st.id);
   } else toast("Kava laadimine ebaõnnestus");
   if (c.status === "fulfilled") {

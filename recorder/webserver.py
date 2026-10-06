@@ -246,7 +246,7 @@ def make_handler(store, auth):
             stations = [{"id": s["id"], "name": s["name"], "short": s.get("short"), "stream": s["stream"],
                          "schedule": {"type": s["schedule"]["type"], "channel": s["schedule"].get("channel")},
                          "server": s["id"] in (data.get("server_stations") or [])} for s in stations_def]
-            self.send_json({"stations": stations, "updated": data.get("updated"), "episodes": data.get("episodes", [])})
+            self.send_json({"stations": stations, "storage": store.kind, "updated": data.get("updated"), "episodes": data.get("episodes", [])})
 
         def api_recordings(self):
             done = [m for k, _ in store.list("rec/") if k.endswith(".json") and (m := store.get_json(k, None))]
