@@ -457,7 +457,8 @@ function renderRec(main) {
       </span>`}
     </div>`;
   }
-  main.innerHTML = `<div class="list">${html}</div>`;
+  main.innerHTML = `<div class="list">${html}</div>${usageSection()}`;
+  bindSecs(main);
   const find = (k) => all.find((r) => r.key === k);
   main.querySelectorAll("[data-key]").forEach((el) => el.onclick = (e) => {
     if (e.target.closest(".acts")) return;
@@ -478,15 +479,14 @@ function renderRec(main) {
 }
 
 // kokkurulluv jaotis; lahti/kinni olek jääb selles brauseris meelde
-const sec = (id, title, html, count) => {
-  const open = store.get("sec:" + id, false);
+const sec = (id, title, html, count, defOpen = false) => {
+  const open = store.get("sec:" + id, defOpen);
   return `<details class="sec" data-sec="${id}" ${open ? "open" : ""}><summary><h2>${esc(title)}${count != null ? ` <span class="cnt">(${count})</span>` : ""}</h2></summary>${html}</details>`;
 };
 const bindSecs = (root) => root.querySelectorAll("details.sec").forEach((d) => d.addEventListener("toggle", () => store.set("sec:" + d.dataset.sec, d.open)));
 
-// --- minu saated ---
-function renderShows(main) {
-  const upcomingEps = config.episodes.filter((e) => !e.auto && Date.parse(e.end) > Date.now());
+// mahuplokk (Salvestuste saki lõpus)
+function usageSection() {
   const FREE = 10 * 1024 ** 3; // R2 tasuta maht
   const fmtSize = (b) => b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + " GB" : Math.round(b / 1024 ** 2) + " MB";
   const byShow = {};
@@ -502,7 +502,12 @@ function renderShows(main) {
     ${rows.length ? `<table>${rows.map(([name, g]) => `<tr><td>${esc(name)}</td>
       <td class="n">${g.n} × · ${g.dur < 3600 ? Math.round(g.dur / 60) + " min" : Math.round(g.dur / 360) / 10 + " h"}</td><td class="n">${fmtSize(g.size)}</td></tr>`).join("")}</table>` : ""}
   </div>`;
-  const usage = sec("usage", "Maht", usageHtml, fmtSize(total));
+  return sec("usage", "Maht", usageHtml, fmtSize(total), true);
+}
+
+// --- minu saated ---
+function renderShows(main) {
+  const upcomingEps = config.episodes.filter((e) => !e.auto && Date.parse(e.end) > Date.now());
   // podcasti-feed (autosse: AntennaPod / Android Auto, Apple Podcasts / CarPlay)
   const tok = config.feed_token;
   const feedUrl = (slug) => `${location.origin}/feed/${tok}/${slug}.xml`;
@@ -537,7 +542,7 @@ function renderShows(main) {
       <span class="body"><div class="stn">${esc(stationName(e.station))}</div><div class="name">${esc(e.title)}</div><div class="sub">${dayLabel(dayKey(e.start))} ${fmtTime(e.start)}–${fmtTime(e.end)}</div></span>
       <button class="btn" data-rme="${e.id}">Eemalda</button></div>`).join("")}</div>`
       : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`, upcomingEps.length)}
-    ${usage}`;
+`;
   bindSecs(main);
   const newToken = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(16).padStart(2, "0")).join("");
   $("#feedOn") && ($("#feedOn").onclick = async () => { config.feed_token = newToken(); await saveConfig(); toast("Podcasti-feed sees"); });
