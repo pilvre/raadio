@@ -73,6 +73,12 @@
   .tag.live { background: var(--accent); color: #fff; }
   .rec-ico { color: var(--accent); font-size: 18px; flex: none; }
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 18px 0 8px; }
+  details.sec > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none; }
+  details.sec > summary::-webkit-details-marker { display: none; }
+  details.sec > summary h2 { margin: 18px 0 8px; display: flex; align-items: center; gap: 8px; }
+  details.sec > summary h2::before { content: "▸"; font-size: 12px; transition: transform .15s; display: inline-block; }
+  details.sec[open] > summary h2::before { transform: rotate(90deg); }
+  details.sec > summary .cnt { font-weight: 500; text-transform: none; letter-spacing: 0; }
   h2:first-child { margin-top: 4px; }
   .empty { color: var(--muted); text-align: center; padding: 40px 0; }
   .usage { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
@@ -471,6 +477,13 @@ function renderRec(main) {
   });
 }
 
+// kokkurulluv jaotis; lahti/kinni olek jääb selles brauseris meelde
+const sec = (id, title, html, count) => {
+  const open = store.get("sec:" + id, true);
+  return `<details class="sec" data-sec="${id}" ${open ? "open" : ""}><summary><h2>${esc(title)}${count != null ? ` <span class="cnt">(${count})</span>` : ""}</h2></summary>${html}</details>`;
+};
+const bindSecs = (root) => root.querySelectorAll("details.sec").forEach((d) => d.addEventListener("toggle", () => store.set("sec:" + d.dataset.sec, d.open)));
+
 // --- minu saated ---
 function renderShows(main) {
   const upcomingEps = config.episodes.filter((e) => !e.auto && Date.parse(e.end) > Date.now());
@@ -502,26 +515,27 @@ function renderShows(main) {
   const feedRow = (label, slug) => `<div class="row" style="cursor:default"><span class="body"><div class="name">${esc(label)}</div>
     <div class="sub" style="white-space:normal;word-break:break-all;user-select:all">${esc(feedUrl(slug))}</div></span>
     <button class="btn" data-copy="${esc(feedUrl(slug))}">Kopeeri</button></div>`;
-  const podcast = `<h2>Podcast (autos kuulamiseks)</h2>
+  const podcast = sec("podcast", "Podcast (autos kuulamiseks)", `
     ${tok ? `<div class="list">${feedRow("Kõik salvestused", "koik")}${feedShows.map(([id, name]) => feedRow(name, slugOf(id))).join("")}</div>
       <p class="sub" style="font-size:13px;color:var(--muted);margin:10px 0">Lisa aadress podcastirakendusse: <b>AntennaPod</b> (Android, Android Auto) → ＋ → „Lisa podcast RSS-aadressiga“; <b>Apple Podcasts</b> (iPhone, CarPlay) → Teek → ⋯ → „Jälgi saadet URL-i kaudu“.
       Rakendus laeb uued salvestused alla, kui telefon lehe aadressini ulatub (kohalikus režiimis koduvõrgus või Tailscale'iga) – autos kuulad neid ilma võrguta. Pocket Casts ja Overcast loevad feede oma serverite kaudu – neid ära kasuta.
       Aadress sisaldab salajast võtit: ära jaga seda.</p>
       <button class="btn" id="feedRotate">Vaheta võti</button> <button class="btn ghost" id="feedOff">Lülita välja</button>`
       : `<p class="sub" style="font-size:14px;color:var(--muted);margin:0 0 10px">Privaatne podcasti-feed, et kuulata salvestusi podcastirakenduses – ka Android Autos ja CarPlay's.</p>
-      <button class="btn primary" id="feedOn">Lülita podcasti-feed sisse</button>`}`;
-  main.innerHTML = `${usage}${podcast}<h2>Kõik saated</h2>
+      <button class="btn primary" id="feedOn">Lülita podcasti-feed sisse</button>`}`, tok ? feedShows.length + 1 : null);
+  main.innerHTML = `${usage}${podcast}${sec("shows", "Kõik saated", `
     ${config.shows.length ? `<div class="list">${config.shows.map((s) => `<div class="row" style="cursor:default">
       <span class="body"><div class="stn">${esc(stationName(s.station))}</div><div class="name">${esc(s.name)}</div>
       <label class="sw"><input type="checkbox" data-rer="${s.id}" ${s.reruns ? "checked" : ""}> ka kordused</label>
       ${keepSelect(s)}</span>
       <button class="btn" data-rm="${s.id}">Eemalda</button></div>`).join("")}</div>`
-      : '<div class="empty">Ühtegi saadet pole valitud.</div>'}
-    <h2>Üksikud episoodid</h2>
+      : '<div class="empty">Ühtegi saadet pole valitud.</div>'}`, config.shows.length)}
+    ${sec("episodes", "Üksikud episoodid", `
     ${upcomingEps.length ? `<div class="list">${upcomingEps.map((e) => `<div class="row" style="cursor:default">
       <span class="body"><div class="stn">${esc(stationName(e.station))}</div><div class="name">${esc(e.title)}</div><div class="sub">${dayLabel(dayKey(e.start))} ${fmtTime(e.start)}–${fmtTime(e.end)}</div></span>
       <button class="btn" data-rme="${e.id}">Eemalda</button></div>`).join("")}</div>`
-      : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`;
+      : '<div class="empty">Ühtegi üksikut episoodi pole valitud.</div>'}`, upcomingEps.length)}`;
+  bindSecs(main);
   const newToken = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(16).padStart(2, "0")).join("");
   $("#feedOn") && ($("#feedOn").onclick = async () => { config.feed_token = newToken(); await saveConfig(); toast("Podcasti-feed sees"); });
   $("#feedRotate") && ($("#feedRotate").onclick = async () => {
