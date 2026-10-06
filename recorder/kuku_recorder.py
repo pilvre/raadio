@@ -39,6 +39,17 @@ OVERLAP = timedelta(seconds=30)    # tunniosade kattuvus
 MIN_PART = timedelta(minutes=15)   # lühem jupp liidetakse naabriga
 POLL_SECONDS = 20                  # lühike, et tunniosade kattuvus (30 s) püsiks
 SCHEDULE_TTL = timedelta(minutes=30)
+APP_ROOT = Path(__file__).resolve().parent.parent
+VERSION_FILE = APP_ROOT / "VERSION"          # olemas ainult avalikust repost paigaldatud koopias
+UPDATE_URL = "https://raadio.mastering.ee/version.json"
+UPDATE_EVERY = timedelta(hours=12)
+
+
+def local_version():
+    try:
+        return VERSION_FILE.read_text(encoding="utf-8").strip() or None
+    except FileNotFoundError:
+        return None  # arenduskoopia (git) – uuendusi ei kontrollita
 BITRATE = "64k"
 KEEP_DAYS = 14                     # vaikimisi säilitus (kui saatel pole "keep")
 CLEANUP_EVERY = timedelta(minutes=30)
@@ -260,6 +271,9 @@ class Recorder:
         self.meta_cache = {}  # rec/*.json võti -> metaandmed
         self.cleanup_lock = threading.Lock()
         self.cleanup_at = None
+        self.version = local_version()
+        self.update = None        # {"latest", "date", "notes"} kui uuem versioon on saadaval
+        self.update_at = None
         self.salvage_lock = threading.Lock()
 
     # --- salvestuskiht (R2 või kohalik kaust) ----------------------------
@@ -553,9 +567,26 @@ class Recorder:
         finally:
             self.cleanup_lock.release()
 
+    def check_update(self):
+        """Kord 12 h jooksul: kas raadio.mastering.ee-l on uuem versioon? (UPDATE_CHECK=0 lülitab välja)"""
+        if not self.version or self.env.get("UPDATE_CHECK") == "0":
+            return
+        try:
+            info = http_json(self.env.get("UPDATE_URL") or UPDATE_URL)
+            latest = str(info.get("version") or "")
+            self.update = ({"latest": latest, "date": info.get("date"), "notes": info.get("notes")}
+                           if latest and latest != self.version else None)
+            if self.update:
+                log(f"uuendus saadaval: {self.version} → {latest} (raadio update)")
+        except Exception as e:
+            log(f"uuenduste kontroll ebaõnnestus: {e}")
+
     def tick(self):
         config = self.config = self.get_json("config.json", {})
         self.refresh_schedule()
+        if self.version and (not self.update_at or datetime.now(timezone.utc) - self.update_at >= UPDATE_EVERY):
+            self.update_at = datetime.now(timezone.utc)  # järgmine tsükkel ei käivita uut kontrolli
+            threading.Thread(target=self.check_update, daemon=True).start()
         if not self.cleanup_at or datetime.now(timezone.utc) - self.cleanup_at > CLEANUP_EVERY:
             threading.Thread(target=self.cleanup, daemon=True).start()
         now = datetime.now(timezone.utc)
@@ -581,6 +612,8 @@ class Recorder:
             "recording": recording,
             "next": upcoming[:5],
             "last_error": self.last_error,
+            "version": self.version,
+            "update": self.update,
         })
 
     def start_web(self):

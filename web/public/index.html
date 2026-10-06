@@ -291,7 +291,11 @@ function renderStatus() {
   el.className = status.last_error ? "err" : "ok";
   const n = status.next?.[0];
   el.innerHTML = `<span class="dot"></span>` + (n ? `Järgmine: ${esc(n.title)} · ${dayLabel(dayKey(n.start))} ${fmtTime(n.start)}` : "Valmis, midagi pole plaanis")
-    + (status.last_error ? ` · ⚠︎ ${esc(status.last_error)}` : "");
+    + (status.last_error ? ` · ⚠︎ ${esc(status.last_error)}` : "")
+    + (status.update ? ` · <a href="#" id="upd" style="color:var(--accent);font-weight:600">⬆ Uuendus saadaval</a>` : "");
+  const u = $("#upd", el);
+  if (u) u.onclick = (e) => { e.preventDefault();
+    alert(`Uus versioon: ${status.update.latest}${status.update.notes ? "\n" + status.update.notes : ""}\n\nUuenda arvutis: ava terminal (Windowsis PowerShell) ja kirjuta\n\n    raadio update\n\nSeaded ja salvestused jäävad alles.`); };
 }
 
 // --- kava ---

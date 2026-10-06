@@ -107,6 +107,9 @@ Ilma `AUTH_USER`/`AUTH_PASS` saladusteta ei lase leht kedagi sisse.
 | `raadio log` | logi reaalajas (Ctrl+C väljub) |
 | `raadio url` | veebilehe aadress |
 | `raadio test [sek] [jaam]` | testsalvestus, nt `raadio test 30 vikerraadio` |
+| `raadio update` | uuenda uusimale versioonile (seaded ja salvestused jäävad alles) |
+
+**Uuendused.** Salvestaja kontrollib kord 12 tunni jooksul faili `https://raadio.mastering.ee/version.json` (muid andmeid ei saadeta). Kui on uuem versioon, näitavad seda veebileht („⬆ Uuendus saadaval“) ja `raadio`. Uuenda käsuga `raadio update` – see hoiatab, kui salvestus parasjagu käib. Kontrolli saab välja lülitada: `UPDATE_CHECK=0` seadete failis.
 
 Taustateenus: macOS-is launchd (`~/Library/LaunchAgents/ee.raadiosalvestaja.plist`), Windowsis Task Scheduler (`Raadiosalvestaja`).
 Logi: macOS `~/Library/Logs/raadiosalvestaja.log`, Windows `%LOCALAPPDATA%\Raadiosalvestaja\salvestaja.log`.

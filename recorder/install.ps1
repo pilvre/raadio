@@ -48,7 +48,8 @@ Write-Host "-> Pythoni keskkond"
 & "$Dir\.venv\Scripts\python.exe" -m pip install -q --disable-pip-version-check -r "$Dir\requirements.txt"
 if ($LASTEXITCODE -ne 0) { throw "pip install ebaõnnestus" }
 
-if (-not (Test-Path $Conf)) {
+$firstInstall = -not (Test-Path $Conf)
+if ($firstInstall) {
   New-Item -ItemType Directory -Force -Path $ConfDir | Out-Null
   Copy-Item "$Dir\config.env.example" $Conf
   $mode = $env:RAADIO_MODE
@@ -98,7 +99,8 @@ Start-ScheduledTask -TaskName $Task
 $cmd = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\raadio.cmd"
 [System.IO.File]::WriteAllText($cmd, "@`"$Dir\.venv\Scripts\python.exe`" `"$Dir\raadio.py`" %*`r`n", $Utf8)
 
-if ($confText -notmatch "(?m)^STORAGE=r2") {
+# tulemüür ja unerežiim ainult esmasel paigaldusel (uuendus ei küsi uuesti)
+if ($firstInstall -and $confText -notmatch "(?m)^STORAGE=r2") {
   # tulemüür: telefon peab saama veebilehe poole pöörduda (privaatvõrgus)
   $rule = "Raadiosalvestaja"
   if (-not (Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue)) {

@@ -6,6 +6,7 @@
     raadio log        logi reaalajas (Ctrl+C väljub)
     raadio url        veebilehe aadress
     raadio test [sekundid] [jaam]   testsalvestus
+    raadio update     uuenda uusimale versioonile (seaded ja salvestused jäävad alles)
 """
 
 import os
@@ -162,6 +163,10 @@ def status():
             print(f"  ⏭ {fmt_time(n['start'])}  {n['title']}")
         if st.get("last_error"):
             print(f"  ⚠ {st['last_error']}")
+        up = st.get("update")
+        if up:
+            print(f"  ⬆ uuendus saadaval: {st.get('version')} → {up['latest']}" + (f" – {up['notes']}" if up.get("notes") else ""))
+            print("    uuenda: raadio update")
     show_access()
     lf = log_file()
     if lf.exists():
@@ -186,6 +191,30 @@ def follow_log(n=30):
             pass
 
 
+def update():
+    """Laeb uusima versiooni (sama paigaldaja mis esmasel paigaldusel, ilma küsimusteta)."""
+    if (rec.APP_ROOT / ".git").exists() or not rec.local_version():
+        return print("See on arenduskoopia (git) – uuenda käsuga: git pull. Automaatne uuendus on paigaldatud koopiale.")
+    st = read_status()
+    if st and st.get("recording") and sys.stdin.isatty():
+        names = ", ".join(r["title"] for r in st["recording"])
+        if input(f"Praegu salvestatakse ({names}) – uuendus katkestab selle. Jätkata? [j/E] ").strip().lower() != "j":
+            return
+    print(f"Praegune versioon: {rec.local_version()}")
+    env_ = dict(os.environ, RAADIO_NONINTERACTIVE="1", RAADIO_DIR=str(rec.APP_ROOT))
+    if MAC:
+        os.execvpe("zsh", ["zsh", "-c", "curl -fsSL https://raadio.mastering.ee/install | zsh"], env_)
+    elif WIN:
+        # eraldi aknas ja viivitusega: see protsess (venv-i python) peab enne lõppema, muidu on failid lukus
+        cmd = ("Start-Sleep 2; $env:RAADIO_NONINTERACTIVE='1'; "
+               "irm https://raadio.mastering.ee/install.ps1 | iex; Read-Host 'Valmis – vajuta Enter'")
+        subprocess.Popen(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", cmd],
+                         creationflags=0x00000010, env=env_)  # CREATE_NEW_CONSOLE
+        print("Uuendus käivitus eraldi aknas.")
+    else:
+        print("Toetatud on macOS ja Windows.")
+
+
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else "status"
     if cmd in ("status", "olek"):
@@ -200,6 +229,8 @@ def main(argv):
         follow_log(int(argv[2]) if len(argv) > 2 else 30)
     elif cmd == "url":
         print(url() or "veebileht on Cloudflare Pages'is (R2 režiim)")
+    elif cmd == "update":
+        update()
     elif cmd == "test":
         subprocess.run([sys.executable, str(HERE / "kuku_recorder.py"), "--test", *argv[2:]])
     else:
