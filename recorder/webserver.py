@@ -95,7 +95,9 @@ def _x(v):
 
 
 def show_slug(i):
-    return re.sub(r"[^\w-]+", "-", str(i if i is not None else "muu"))
+    # vanad (enne mitut jaama) salvestused: show_id = 209 -> "kuku:209"
+    i = "muu" if i is None else (str(i) if ":" in str(i) else f"kuku:{i}")
+    return re.sub(r"[^\w-]+", "-", i)
 
 
 def _hms(sec):
@@ -103,12 +105,12 @@ def _hms(sec):
     return f"{sec // 3600:02d}:{sec % 3600 // 60:02d}:{sec % 60:02d}"
 
 
-def build_feed(recs, base, token, slug):
+def build_feed(recs, base, token, slug, name=None):
     from email.utils import format_datetime
     allf = slug == "koik"
     items = sorted((r for r in recs if r.get("key", "").startswith("rec/") and (allf or show_slug(r.get("show_id")) == slug)),
                    key=lambda r: r["start"], reverse=True)
-    title = "Raadiosalvestaja" if allf else f"{items[0]['show'] if items else 'Saade'} (Raadiosalvestaja)"
+    title = "Raadiosalvestaja" if allf else f"{items[0]['show'] if items else (name or 'Saade')} (Raadiosalvestaja)"
     image = None if allf else next((r["thumbnail"] for r in items if r.get("thumbnail")), None)
     out = []
     for r in items:
@@ -315,7 +317,9 @@ def make_handler(store, auth):
             host = self.headers.get("X-Forwarded-Host") or self.headers.get("Host") or "localhost"
             proto = self.headers.get("X-Forwarded-Proto") or ("https" if host.split(":")[0].endswith(".ts.net") else "http")
             recs = [mm for k, _ in store.list("rec/") if k.endswith(".json") and (mm := store.get_json(k, None))]
-            body = build_feed(recs, f"{proto}://{host}", token, m[1]).encode()
+            cfg = store.get_json("config.json", {}) or {}
+            named = next((s.get("name") for s in (cfg.get("shows") or []) + (cfg.get("timers") or []) if show_slug(s.get("id")) == m[1]), None)
+            body = build_feed(recs, f"{proto}://{host}", token, m[1], named).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/rss+xml; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))

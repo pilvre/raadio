@@ -2,7 +2,7 @@
 // Võti (config.json: feed_token) asendab parooli – podcastirakendused ei oska alati sisse logida.
 // Ligipääs ainult salvestustele, mitte valikutele ega kustutamisele.
 import { serveAudio, listJson } from "../../lib/audio.js";
-import { buildFeed } from "../../lib/feed.js";
+import { buildFeed, showSlug } from "../../lib/feed.js";
 
 async function tokenOk(env, token) {
   const cfg = await (await env.KUKU.get("config.json"))?.json();
@@ -21,7 +21,10 @@ export async function onRequest({ env, request, params }) {
   const m = /^([\w-]+)\.xml$/.exec(rest.join("/"));
   if (!m) return new Response("not found", { status: 404 });
   const url = new URL(request.url);
-  const xml = buildFeed(await listJson(env, "rec/"), { base: url.origin, token, slug: m[1] });
+  // saate nimi ka siis, kui salvestusi veel pole (tellitud saade / taimer)
+  const cfg = (await (await env.KUKU.get("config.json"))?.json()) || {};
+  const named = [...(cfg.shows || []), ...(cfg.timers || [])].find((s) => showSlug(s.id) === m[1]);
+  const xml = buildFeed(await listJson(env, "rec/"), { base: url.origin, token, slug: m[1], name: named?.name });
   return new Response(request.method === "HEAD" ? null : xml, {
     headers: { "content-type": "application/rss+xml; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex" },
   });

@@ -492,8 +492,13 @@ function renderShows(main) {
   // podcasti-feed (autosse: AntennaPod / Android Auto, Apple Podcasts / CarPlay)
   const tok = config.feed_token;
   const feedUrl = (slug) => `${location.origin}/feed/${tok}/${slug}.xml`;
-  const feedShows = [...new Map(recordings.filter((r) => !r.live).map((r) => [String(r.show_id), r.show])).entries()];
-  const slugOf = (id) => String(id ?? "muu").replace(/[^\w-]+/g, "-");
+  // üks feed saate kohta: tellitud saated + taimerid + salvestuste saated (vanad numbrilised ID-d = Kuku)
+  const normSid = (id) => (id == null ? "muu" : String(id).includes(":") ? String(id) : `kuku:${id}`);
+  const slugOf = (id) => normSid(id).replace(/[^\w-]+/g, "-");
+  const feedMap = new Map();
+  for (const s of [...config.shows, ...config.timers]) feedMap.set(normSid(s.id), s.name);
+  for (const r of recordings) if (!r.live && !feedMap.has(normSid(r.show_id))) feedMap.set(normSid(r.show_id), r.show);
+  const feedShows = [...feedMap.entries()];
   const feedRow = (label, slug) => `<div class="row" style="cursor:default"><span class="body"><div class="name">${esc(label)}</div>
     <div class="sub" style="white-space:normal;word-break:break-all;user-select:all">${esc(feedUrl(slug))}</div></span>
     <button class="btn" data-copy="${esc(feedUrl(slug))}">Kopeeri</button></div>`;

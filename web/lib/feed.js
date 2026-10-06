@@ -1,7 +1,9 @@
 // Podcasti RSS (Apple/itunes nimeruum) salvestustest. Sama loogika: recorder/webserver.py
 const x = (s) => String(s ?? "").replace(/[<>&'"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[c]));
 const TZ = "Europe/Tallinn";
-export const showSlug = (id) => String(id ?? "muu").replace(/[^\w-]+/g, "-");
+// vanad (enne mitut jaama) salvestused: show_id = 209 -> "kuku:209"
+const normId = (id) => (id == null ? "muu" : String(id).includes(":") ? String(id) : `kuku:${id}`);
+export const showSlug = (id) => normId(id).replace(/[^\w-]+/g, "-");
 
 function hms(s) {
   s = Math.max(0, Math.round(s || 0));
@@ -12,13 +14,13 @@ function when(iso) {
 }
 
 // recs: rec/*.json metaandmed; slug: "koik" või saate slug
-export function buildFeed(recs, { base, token, slug }) {
+export function buildFeed(recs, { base, token, slug, name }) {
   const all = slug === "koik";
   const items = recs
     .filter((r) => r.key?.startsWith("rec/") && (all || showSlug(r.show_id) === slug))
     .sort((a, b) => b.start.localeCompare(a.start));
   const first = items[0];
-  const title = all ? "Raadiosalvestaja" : `${first?.show || "Saade"} (Raadiosalvestaja)`;
+  const title = all ? "Raadiosalvestaja" : `${first?.show || name || "Saade"} (Raadiosalvestaja)`;
   const image = all ? null : items.find((r) => r.thumbnail)?.thumbnail;
   const self = `${base}/feed/${token}/${slug}.xml`;
   const body = items.map((r) => {
