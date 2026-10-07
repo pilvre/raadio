@@ -65,7 +65,7 @@ Mitteinteraktiivne paigaldus: `RAADIO_NONINTERACTIVE=1 RAADIO_MODE=local RAADIO_
 ### R2 režiim lühidalt
 
 1. Cloudflare → R2 → bucket (nt `raadio`) → API token *Object Read & Write* ainult sellele bucketile.
-2. Paigaldaja → režiim 2 → `config.env`-i `R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` → paigaldaja uuesti.
+2. Installer → režiim 2 → `config.env`-i `R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` → installer uuesti.
 3. Repo fork → Cloudflare Pages → Connect to Git: root `web`, output `public`, build command tühi. Bucket peab klappima `web/wrangler.toml`-iga (binding `KUKU`).
 4. Pages saladused `AUTH_USER` (kasutajanimi), `AUTH_PASS` (parool) → Retry deployment.
 

@@ -62,7 +62,7 @@ if ($firstInstall) {
   }
   if ($mode -eq "r2") {
     Set-ConfLine "STORAGE" "r2"
-    Write-Host "-> Täida R2 andmed failis $Conf ja käivita paigaldaja uuesti."
+    Write-Host "-> Täida R2 andmed failis $Conf ja käivita installer uuesti."
     if (-not $env:RAADIO_NONINTERACTIVE) { Start-Process notepad $Conf }
     exit 0
   }

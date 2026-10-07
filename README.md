@@ -69,11 +69,11 @@ curl -fsSL https://raadio.mastering.ee/install | zsh
 irm https://raadio.mastering.ee/install.ps1 | iex
 ```
 
-Paigaldaja paigaldab vajadusel ffmpeg-i ja Pythoni (macOS: Homebrew, Windows: winget), laeb tööriista alla ja küsib, kas hoida salvestused arvutis või Cloudflare R2-s. Käsitsi: `git clone https://github.com/pilvre/raadio.git && cd raadio/recorder && ./install.sh` (Windowsis `install.ps1`).
+Installer paigaldab vajadusel ffmpeg-i ja Pythoni (macOS: Homebrew, Windows: winget), laeb tööriista alla ja küsib, kas hoida salvestused arvutis või Cloudflare R2-s. Käsitsi: `git clone https://github.com/pilvre/raadio.git && cd raadio/recorder && ./install.sh` (Windowsis `install.ps1`).
 
-Paigaldaja näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille paigaldajale andsid (vaikimisi kasutajanimi `raadio`; muudetav seadete failis: `WEB_USER`, `WEB_PASS`). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
+Installer näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi `raadio`; muudetav seadete failis: `WEB_USER`, `WEB_PASS`). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
 
-Windowsis: luba paigaldajal lisada tulemüüri reegel (muidu telefon lehte ei näe) ja hoia arvuti ärkvel.
+Windowsis: luba installeril lisada tulemüüri reegel (muidu telefon lehte ei näe) ja hoia arvuti ärkvel.
 
 Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removable Volumes“), luba see.
 
@@ -90,7 +90,7 @@ Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removab
 Vaja lisaks: Node.js, Cloudflare konto.
 
 1. **R2:** Cloudflare → R2 → loo bucket (nt `raadio`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
-2. **Salvesti:** paigaldaja → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita paigaldaja uuesti.
+2. **Salvesti:** installer → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita installer uuesti.
 3. **Veebileht:** **Workers & Pages → Create → Pages → Connect to Git** → see repo
    - Build command: *(tühi)*, Build output: `public`, Root directory: `web`
    - Kui bucketi nimi pole `raadio`, muuda `web/wrangler.toml` (binding `KUKU`)

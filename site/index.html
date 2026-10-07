@@ -200,9 +200,9 @@
     <p class="hint" id="hint"></p>
 
     <ol class="steps" id="stepsLocal">
-      <li><div>Kleebi käsk <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span> ja vajuta Enter. Paigaldaja paigaldab vajadusel <span data-os-text="mac">ffmpeg-i ja Pythoni (Homebrew kaudu – kui Homebrew'd pole, juhatab <a href="https://brew.sh">brew.sh</a>-i)</span><span data-os-text="win">Pythoni ja ffmpeg-i (winget kaudu)</span> ja küsib: vali <b>1) Siin arvutis</b> ning pane veebilehele kasutajanimi ja parool.</div></li>
+      <li><div>Kleebi käsk <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span> ja vajuta Enter. Installer paigaldab vajadusel <span data-os-text="mac">ffmpeg-i ja Pythoni (Homebrew kaudu – kui Homebrew'd pole, juhatab <a href="https://brew.sh">brew.sh</a>-i)</span><span data-os-text="win">Pythoni ja ffmpeg-i (winget kaudu)</span> ja küsib: vali <b>1) Siin arvutis</b> ning pane veebilehele kasutajanimi ja parool.</div></li>
       <li data-os-only="win"><div>Kui Windows küsib, <b>luba tulemüüri reegel</b> (muidu telefon lehte ei näe) ja nõustu unerežiimi väljalülitamisega vooluvõrgus.</div></li>
-      <li><div>Paigaldaja näitab lõpus aadressi, nt <code>http://192.168.1.20:8788</code>. Ava see telefonis samas Wi-Fi võrgus ja logi sisse kasutajanime ja parooliga, mille paigaldajale andsid (vaikimisi kasutajanimi <code>raadio</code>).</div></li>
+      <li><div>Installer näitab lõpus aadressi, nt <code>http://192.168.1.20:8788</code>. Ava see telefonis samas Wi-Fi võrgus ja logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi <code>raadio</code>).</div></li>
       <li><div>Lisa leht telefoni avaekraanile (iPhone: Jaga → Lisa avaekraanile) – siis käitub see nagu äpp.</div></li>
       <li><div>Vali kavast saated või lisa taimer. Olekut näed arvutis, kui kirjutad <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span> <code>raadio</code> ja vajutad Enter.</div></li>
     </ol>
@@ -277,8 +277,8 @@ const BASE = location.origin.startsWith("http") && !location.hostname.match(/^(l
 const CMD = { mac: `curl -fsSL ${BASE}/install | zsh`, win: `irm ${BASE}/install.ps1 | iex` };
 const LABEL = { mac: "Ava Terminal (Rakendused → Utiliidid → Terminal), kleebi sinna see käsk ja vajuta Enter:",
   win: "Ava PowerShell (Start → kirjuta „PowerShell“ → Enter), kleebi sinna see käsk ja vajuta Enter:" };
-const HINT = { mac: "Käsk laeb paigaldaja aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
-  win: "Windows 10 või 11. Käsk laeb paigaldaja aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav." };
+const HINT = { mac: "Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
+  win: "Windows 10 või 11. Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav." };
 let os = /Win/i.test(navigator.userAgent) ? "win" : "mac", mode = "local";
 function render() {
   document.querySelectorAll("[data-os]").forEach((b) => b.classList.toggle("on", b.dataset.os === os));

@@ -192,7 +192,7 @@ def follow_log(n=30):
 
 
 def update():
-    """Laeb uusima versiooni (sama paigaldaja mis esmasel paigaldusel, ilma küsimusteta)."""
+    """Laeb uusima versiooni (sama installer mis esmasel paigaldusel, ilma küsimusteta)."""
     if (rec.APP_ROOT / ".git").exists() or not rec.local_version():
         return print("See on arenduskoopia (git) – uuenda käsuga: git pull. Automaatne uuendus on paigaldatud koopiale.")
     st = read_status()

@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Raadiosalvesti – ühe käsu paigaldus macOS-ile:
 #   curl -fsSL https://raadio.mastering.ee/install | zsh
-# Laeb tööriista kausta ~/Raadiosalvestaja, kontrollib ffmpeg-i ja Pythoni, käivitab paigaldaja.
+# Laeb tööriista kausta ~/Raadiosalvestaja, kontrollib ffmpeg-i ja Pythoni, käivitab installeri.
 set -e
 # NB: kogu skript on funktsioonis, mis käivitatakse viimasel real. `curl | zsh` korral loeb zsh
 # skripti stdin-ist ja näiteks `brew install` sööks muidu ülejäänud skripti ära.
@@ -12,7 +12,7 @@ main() {
 
   echo "Raadiosalvesti – paigaldus"
   if [ "$(uname)" != Darwin ]; then
-    echo "See paigaldaja on macOS-ile. Windowsis (PowerShell): irm https://raadio.mastering.ee/install.ps1 | iex"
+    echo "See installer on macOS-ile. Windowsis (PowerShell): irm https://raadio.mastering.ee/install.ps1 | iex"
     exit 1
   fi
 
@@ -39,7 +39,7 @@ main() {
   mkdir -p "$APP"
   rsync -a --delete --exclude ".venv" --exclude "node_modules" "$tmp/src/" "$APP/"
 
-  # paigaldaja küsib režiimi ja parooli – klaviatuurilt, mitte torust
+  # installer küsib režiimi ja parooli – klaviatuurilt, mitte torust
   if [ -z "$RAADIO_NONINTERACTIVE" ] && [ -r /dev/tty ]; then
     zsh "$APP/recorder/install.sh" </dev/tty
   else
