@@ -204,14 +204,14 @@
       <li data-os-only="win"><div>Kui Windows küsib, <b>luba tulemüüri reegel</b> (muidu telefon lehte ei näe) ja nõustu unerežiimi väljalülitamisega vooluvõrgus.</div></li>
       <li><div>Paigaldaja näitab lõpus aadressi, nt <code>http://192.168.1.20:8788</code>. Ava see telefonis samas Wi-Fi võrgus ja logi sisse kasutajanime ja parooliga, mille paigaldajale andsid (vaikimisi kasutajanimi <code>raadio</code>).</div></li>
       <li><div>Lisa leht telefoni avaekraanile (iPhone: Jaga → Lisa avaekraanile) – siis käitub see nagu äpp.</div></li>
-      <li><div>Vali kavast saated või lisa taimer. Oleku näed arvutis, kui kirjutad <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span> <code>raadio</code> ja vajutad Enter.</div></li>
+      <li><div>Vali kavast saated või lisa taimer. Olekut näed arvutis, kui kirjutad <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span> <code>raadio</code> ja vajutad Enter.</div></li>
     </ol>
 
     <ol class="steps" id="stepsR2" hidden>
       <li><div>Loo Cloudflare'is (tasuta konto) <b>R2 → Create bucket</b>, nt nimega <code>raadio</code>. Seejärel <b>Manage API tokens → Create API token</b>: õigus <i>Object Read &amp; Write</i>, ainult see bucket.</div></li>
       <li><div>Kleebi ülal olev käsk <span data-os-text="mac">Terminali</span><span data-os-text="win">PowerShelli</span>, vajuta Enter ja vali <b>2) Cloudflare R2</b>. Avanevasse seadete faili pane konto ID ning tokeni <i>Access Key ID</i> ja <i>Secret</i>, seejärel käivita käsk uuesti.</div></li>
       <li><div>Tee GitHubis <a href="https://github.com/pilvre/raadio/fork">koopia (fork)</a> ja ühenda see Cloudflare'is: <b>Workers &amp; Pages → Create → Pages → Connect to Git</b>. Root directory <code>web</code>, build output <code>public</code>, build command tühi.</div></li>
-      <li><div>Pages'i seadetes lisa saladused <code>AUTH_USER</code> (kasutajanimi) ja <code>AUTH_PASS</code> (parool) ning tee uus deploy. Ava <code>…pages.dev</code> aadress telefonis ja lisa avaekraanile.</div></li>
+      <li><div>Cloudflare Pages'i seadetes lisa saladused <code>AUTH_USER</code> (kasutajanimi) ja <code>AUTH_PASS</code> (parool) ning tee uus deploy. Ava <code>…pages.dev</code> aadress telefonis ja lisa avaekraanile.</div></li>
     </ol>
   </div>
 </section>
