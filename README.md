@@ -71,7 +71,7 @@ irm https://raadio.mastering.ee/install.ps1 | iex
 
 Installer paigaldab vajadusel ffmpeg-i ja Pythoni (macOS: Homebrew, Windows: winget), laeb tööriista alla ja küsib, kas hoida salvestused arvutis või Cloudflare R2-s. Käsitsi: `git clone https://github.com/pilvre/raadio.git && cd raadio/recorder && ./install.sh` (Windowsis `install.ps1`).
 
-Installer näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi `raadio`; muudetav seadete failis: `WEB_USER`, `WEB_PASS`). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
+Installer näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi `raadio`; ununes? `raadio parool` näitab kasutajanime ja laseb parooli lähtestada). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
 
 Windowsis: luba installeril lisada tulemüüri reegel (muidu telefon lehte ei näe) ja hoia arvuti ärkvel.
 
@@ -108,6 +108,7 @@ Ilma `AUTH_USER`/`AUTH_PASS` saladusteta ei lase leht kedagi sisse.
 | `raadio url` | veebilehe aadress |
 | `raadio test [sek] [jaam]` | testsalvestus, nt `raadio test 30 vikerraadio` |
 | `raadio update` | uuenda uusimale versioonile (seaded ja salvestused jäävad alles) |
+| `raadio parool` | näita kasutajanime, sea uus parool või eemalda see (ununenud parool) |
 
 **Uuendused.** Salvesti kontrollib kord 12 tunni jooksul faili `https://raadio.mastering.ee/version.json` (muid andmeid ei saadeta). Kui on uuem versioon, näitavad seda veebileht („⬆ Uuendus saadaval“) ja `raadio`. Uuenda käsuga `raadio update` – see hoiatab, kui salvestus parasjagu käib. Kontrolli saab välja lülitada: `UPDATE_CHECK=0` seadete failis.
 

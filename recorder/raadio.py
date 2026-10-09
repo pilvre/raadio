@@ -7,6 +7,7 @@
     raadio url        veebilehe aadress
     raadio test [sekundid] [jaam]   testsalvestus
     raadio update     uuenda uusimale versioonile (seaded ja salvestused jäävad alles)
+    raadio parool     näita kasutajanime, sea uus parool või eemalda see (kohalik veebileht)
 """
 
 import os
@@ -71,7 +72,9 @@ def show_access():
     print(f"  🌐 {u}")
     e = env()
     if e.get("WEB_PASS"):
-        print(f"  Kasutajanimi: {e.get('WEB_USER') or 'raadio'}")
+        print(f"  Kasutajanimi: {e.get('WEB_USER') or 'raadio'}   (parool ununes? raadio parool)")
+    else:
+        print("  Parool puudub – lehele pääseb igaüks samas võrgus (lisa: raadio parool)")
 
 
 def start():
@@ -215,6 +218,44 @@ def update():
         print("Toetatud on macOS ja Windows.")
 
 
+def set_conf(key, value):
+    """Muuda/lisa/eemalda rida seadete failis (value=None eemaldab väärtuse)."""
+    import re
+    path = rec.CRED_FILE
+    text = path.read_text(encoding="utf-8-sig") if path.exists() else ""
+    line = f"{key}={value if value is not None else ''}"
+    if re.search(rf"(?m)^{key}=.*$", text):
+        text = re.sub(rf"(?m)^{key}=.*$", lambda m: line, text)
+    else:
+        text = text.rstrip("\n") + "\n" + line + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+
+
+def password():
+    """Kohaliku veebilehe kasutajanimi ja parool (ununenud parooli lähtestamine)."""
+    import getpass
+    e = env()
+    if make_storage(e).kind != "local":
+        return print("R2 režiimis on kasutajanimi ja parool Cloudflare Pages'i seadetes (AUTH_USER, AUTH_PASS).")
+    user = e.get("WEB_USER") or "raadio"
+    print(f"Kasutajanimi: {user}")
+    print("Parool: " + ("seatud" if e.get("WEB_PASS") else "puudub"))
+    if not sys.stdin.isatty():
+        return
+    new_user = input(f"Uus kasutajanimi [{user}]: ").strip() or user
+    p1 = getpass.getpass("Uus parool (tühi = ilma paroolita): ")
+    if p1:
+        if getpass.getpass("Korda parooli: ") != p1:
+            return print("Paroolid ei klapi – midagi ei muudetud.")
+    elif input("Ilma paroolita pääseb lehele igaüks samas võrgus. Kindel? [j/E] ").strip().lower() != "j":
+        return print("Midagi ei muudetud.")
+    set_conf("WEB_USER", new_user)
+    set_conf("WEB_PASS", p1 or None)
+    print("Salvestatud.")
+    restart()
+
+
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else "status"
     if cmd in ("status", "olek"):
@@ -229,6 +270,11 @@ def main(argv):
         follow_log(int(argv[2]) if len(argv) > 2 else 30)
     elif cmd == "url":
         print(url() or "veebileht on Cloudflare Pages'is (R2 režiim)")
+    elif cmd in ("parool", "password"):
+        try:
+            password()
+        except (KeyboardInterrupt, EOFError):
+            print("\nKatkestatud – midagi ei muudetud.")
     elif cmd == "update":
         update()
     elif cmd == "test":

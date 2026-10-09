@@ -77,6 +77,8 @@ raadio start|stop|restart
 raadio log             logi reaalajas
 raadio url             kohaliku veebilehe aadress
 raadio test 30 vikerraadio   30 s testsalvestus
+raadio update          uuenda
+raadio parool          kasutajanimi + uus parool / parooli eemaldamine (kohalik veebileht)
 ```
 
 Logi: macOS `~/Library/Logs/raadiosalvestaja.log`, Windows `%LOCALAPPDATA%\Raadiosalvestaja\salvestaja.log`.
@@ -84,7 +86,8 @@ Logi: macOS `~/Library/Logs/raadiosalvestaja.log`, Windows `%LOCALAPPDATA%\Raadi
 ## Levinud ülesanded
 
 - **Uus jaam:** lisa kirje `web/stations.json`-i (`stream` = otse MP3 või HLS `.m3u8`; `schedule.type`: `err` kui ERR-i kanal, muidu jäta kava ära ja kasuta taimereid). Kontrolli voogu: `ffmpeg -t 5 -i <url> -f null -`. Ära lisa jaamu, mille voog on kaitstud (tokenid, DRM, sisselogimine).
-- **Teine salvestuskaust / port / parool:** `config.env` (`LOCAL_DIR`, `WEB_PORT`, `WEB_USER`, `WEB_PASS`) → `raadio restart`.
+- **Ununenud parool / kasutajanimi:** `raadio parool` (kasutaja sisestab ise – ära küsi parooli chatti).
+- **Teine salvestuskaust / port:** `config.env` (`LOCAL_DIR`, `WEB_PORT`) → `raadio restart`.
 - **Kodust väljas ligipääs (kohalik režiim):** Tailscale mõlemasse seadmesse, arvutis `tailscale serve --bg 8788` → `https://<arvuti>.<tailnet>.ts.net` (https-iga töötab ka telefoni laadimine).
 - **Uuendamine:** `raadio update` (või paigalduskäsk uuesti) – seaded ja salvestused jäävad alles. Salvesti kontrollib 12 h järel `https://raadio.mastering.ee/version.json` vs paigalduse `VERSION` faili (`UPDATE_CHECK=0` lülitab välja); teade on `status.json` → `update`. Git-arenduskoopias `VERSION`-it pole – seal uuendusi ei kontrollita ja `raadio update` keeldub (kasuta `git pull`).
 - **Eemaldamine:** `raadio stop`, eemalda taustateenus (macOS: `launchctl bootout gui/$(id -u)/ee.raadiosalvestaja` ja kustuta plist; Windows: `Unregister-ScheduledTask -TaskName Raadiosalvestaja -Confirm:$false` ja kustuta `%LOCALAPPDATA%\Microsoft\WindowsApps\raadio.cmd`), kustuta rakenduse kaust. Salvestused ja seaded on eraldi (`~/Music/Raadiosalvestaja`, `~/.config/raadiosalvestaja`) – küsi enne kustutamist.
