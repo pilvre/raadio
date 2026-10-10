@@ -122,7 +122,7 @@ Write-Host ""
 Write-Host "Valmis."
 $u = & "$Dir\.venv\Scripts\python.exe" "$Dir\raadio.py" url
 if ($u -like "http*") {
-  Write-Host "  Ava telefonis (samas Wi-Fi võrgus): $u"
+  Write-Host "  Ava telefoni või arvuti brauseris (samas Wi-Fi võrgus): $u"
   $ct = [System.IO.File]::ReadAllText($Conf, $Utf8)
   if ($ct -match "(?m)^WEB_PASS=.+") {
     $user = if ($ct -match "(?m)^WEB_USER=(.+)$") { $Matches[1].Trim() } else { "raadio" }

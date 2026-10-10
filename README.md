@@ -71,7 +71,7 @@ irm https://raadio.mastering.ee/install.ps1 | iex
 
 Installer paigaldab vajadusel ffmpeg-i ja Pythoni (macOS: Homebrew, Windows: winget), laeb tööriista alla ja küsib, kas hoida salvestused arvutis või Cloudflare R2-s. Käsitsi: `git clone https://github.com/pilvre/raadio.git && cd raadio/recorder && ./install.sh` (Windowsis `install.ps1`).
 
-Installer näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefonis (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi `raadio`; ununes? `raadio parool` näitab kasutajanime ja laseb parooli lähtestada). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
+Installer näitab lõpus aadressi (nt `http://minu-mac.local:8788` või `http://192.168.1.20:8788`) – ava see telefoni või arvuti brauseris (samas Wi-Fi võrgus). Logi sisse kasutajanime ja parooliga, mille installerile andsid (vaikimisi kasutajanimi `raadio`; ununes? `raadio parool` näitab kasutajanime ja laseb parooli lähtestada). Salvestused on kaustas `~/Music/Raadiosalvestaja`, seaded failis `~/.config/raadiosalvestaja/config.env`.
 
 Windowsis: luba installeril lisada tulemüüri reegel (muidu telefon lehte ei näe) ja hoia arvuti ärkvel.
 
@@ -89,9 +89,9 @@ Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removab
 
 Vaja lisaks: Node.js, Cloudflare konto.
 
-1. **R2:** Cloudflare → R2 → loo bucket (nt `raadio`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
+1. **R2:** Cloudflare (vajadusel tee esmalt tasuta konto) → **Storage & Databases → R2 Object Storage → Create bucket** (nt `raadio`). **Manage API tokens → Create API token**: *Object Read & Write*, ainult see bucket.
 2. **Salvesti:** installer → vali 2) Cloudflare R2, täida avanevas failis konto ID ja võtmed, käivita installer uuesti.
-3. **Veebileht:** **Workers & Pages → Create → Pages → Connect to Git** → see repo
+3. **Veebileht:** tee GitHubis (tasuta konto) repost koopia (fork) → Cloudflare **Compute → Workers & Pages → Create → Pages → Connect to Git** → sinu fork
    - Build command: *(tühi)*, Build output: `public`, Root directory: `web`
    - Kui bucketi nimi pole `raadio`, muuda `web/wrangler.toml` (binding `KUKU`)
    - **Settings → Variables and Secrets** (tüüp *Secret*): `AUTH_USER` (kasutajanimi) ja `AUTH_PASS` (parool), seejärel **Retry deployment**
