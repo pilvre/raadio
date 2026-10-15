@@ -154,4 +154,5 @@ def make_storage(env):
     mode = (env.get("STORAGE") or ("r2" if env.get("R2_SECRET_ACCESS_KEY") else "local")).lower()
     if mode == "r2":
         return R2Storage(env)
-    return LocalStorage(env.get("LOCAL_DIR") or "~/Music/Raadiosalvestaja")
+    default_dir = "/data" if Path("/data").is_dir() else "~/Music/Raadiosalvestaja"
+    return LocalStorage(env.get("LOCAL_DIR") or default_dir)

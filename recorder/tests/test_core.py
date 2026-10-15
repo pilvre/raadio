@@ -69,6 +69,32 @@ def test_update_only_when_newer():
     assert not k.is_newer("a", "x", "a", None)
 
 
+def test_load_env_env_vars_and_file():
+    """Testib keskkonnamuutujate ja seadistusfaili laadimist ning salvestuskausta."""
+    import os
+    import tempfile
+    from storage import make_storage
+    orig_env = dict(os.environ)
+    try:
+        os.environ["STORAGE"] = "local"
+        os.environ["LOCAL_DIR"] = "/tmp/test_raadio_dir"
+        os.environ["PUBLIC_URL"] = "https://raadio.example.com"
+        with tempfile.NamedTemporaryFile("w+", delete=False) as f:
+            f.write("LOCAL_DIR=/tmp/from_file\nWEB_USER=testuser\n")
+            f_path = Path(f.name)
+        loaded = k.load_env(f_path)
+        assert loaded["STORAGE"] == "local"
+        assert loaded["LOCAL_DIR"] == "/tmp/from_file"  # fail kirjutab üle
+        assert loaded["WEB_USER"] == "testuser"
+        assert loaded["PUBLIC_URL"] == "https://raadio.example.com"
+        st = make_storage(loaded)
+        assert st.root == Path("/tmp/from_file").resolve()
+        f_path.unlink()
+    finally:
+        os.environ.clear()
+        os.environ.update(orig_env)
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"):

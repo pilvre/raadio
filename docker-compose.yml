@@ -1,0 +1,62 @@
+services:
+  raadio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: raadiosalvesti:latest
+    container_name: raadiosalvesti
+    restart: unless-stopped
+
+    # Turvalisus: tavakasutaja (UID 1000), read-only failisüsteem, õiguste piirangud
+    user: "1000:1000"
+    read_only: true
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+    # Tööks vajalikud ajutised failid mälus (kuna root failisüsteem on read-only)
+    tmpfs:
+      - /tmp:size=512M
+
+    environment:
+      - TZ=Europe/Tallinn
+      # Salvestusrežiim: local (vaikimisi) või r2
+      - STORAGE=local
+      - LOCAL_DIR=/data
+      - WEB_PORT=8788
+      - WEB_USER=raadio
+      - WEB_PASS=salasona  # Muuda kindlasti! Kui autentimist teeb reverse proxy (Traefik/Authelia), jäta tühjaks
+      # Avalik URL podcasti RSS-voo ja linkide jaoks (kui on domeen/pöördproksi)
+      # - PUBLIC_URL=https://raadio.example.com
+      # Kui soovid kasutada Cloudflare R2 salvestuskihti:
+      # - STORAGE=r2
+      # - R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+      # - R2_BUCKET=raadio
+      # - R2_ACCESS_KEY_ID=...
+      # - R2_SECRET_ACCESS_KEY=...
+
+    volumes:
+      # Püsiv andmekataloog: salvestused (rec/, live/), seaded (config.json) ja olek (status.json, .state/)
+      - ./data:/data
+      # Valikuline: kui soovid config.env faili kasutada keskkonnamuutujate asemel:
+      # - ./config:/config:ro
+
+    ports:
+      # Otseühendus (kui reverse proxyt ei kasutata):
+      - "8788:8788"
+
+    # --- Traefik reverse proxy seadistuse näidis ---
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.raadio.rule=Host(`raadio.example.com`)"
+    #   - "traefik.http.routers.raadio.entrypoints=websecure"
+    #   - "traefik.http.routers.raadio.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.raadio.loadbalancer.server.port=8788"
+    # networks:
+    #   - traefik_network
+
+# networks:
+#   traefik_network:
+#     external: true

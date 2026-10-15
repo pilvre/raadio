@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+node_modules
+__pycache__
+*.pyc
+*.pyo
+.DS_Store
+.dev.vars
+.claude
+r2.env
+site
+recorder/tests
+recorder/.venv

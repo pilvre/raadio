@@ -12,6 +12,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import ssl
 import subprocess
 import sys
@@ -72,8 +73,24 @@ KEEP_DAYS = 14                     # vaikimisi säilitus (kui saatel pole "keep"
 CLEANUP_EVERY = timedelta(minutes=30)
 LIVE_EVERY = 120                   # pooleli faili üleslaadimise intervall (s)
 
-STATE_DIR = Path.home() / ".local" / "share" / "kuku-salvestus"
-CONF_DIRS = [Path.home() / ".config" / "raadiosalvestaja", Path.home() / ".config" / "kuku-salvestus"]
+
+def _default_state_dir():
+    """Vaikimisi olekukataloog (konteineris /data/.state, muidu ~/.local/share/...)."""
+    if os.environ.get("RAADIO_STATE_DIR"):
+        return Path(os.environ["RAADIO_STATE_DIR"])
+    if Path("/data").is_dir():
+        return Path("/data/.state")
+    return Path.home() / ".local" / "share" / "kuku-salvestus"
+
+
+STATE_DIR = _default_state_dir()
+CONF_DIRS = [
+    Path(os.environ["RAADIO_CONF_DIR"]) if os.environ.get("RAADIO_CONF_DIR") else None,
+    Path("/config"),
+    Path.home() / ".config" / "raadiosalvestaja",
+    Path.home() / ".config" / "kuku-salvestus",
+]
+CONF_DIRS = [d for d in CONF_DIRS if d]
 CONF_DIR = CONF_DIRS[0]
 FFMPEG = shutil.which("ffmpeg") or "ffmpeg"
 # Windowsis taustal (pythonw) ei tohi ffmpeg konsooliakent avada
@@ -98,14 +115,19 @@ def log(*a):
 
 
 def load_env(path):
-    env = {}
-    if not path.exists():
-        return env
-    for line in path.read_text(encoding="utf-8-sig").splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            env[k.strip()] = v.strip().strip('"').strip("'")
+    env = {k: v for k, v in os.environ.items() if k in (
+        "STORAGE", "LOCAL_DIR", "WEB_PORT", "WEB_USER", "WEB_PASS",
+        "R2_ENDPOINT", "R2_BUCKET", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY",
+        "KUKU_STREAM_URL", "KUKU_SCHEDULE_URL", "UPDATE_CHECK", "UPDATE_URL",
+        "FFMPEG", "LOG_FILE", "WEB", "PUBLIC_URL", "LAN_URL", "BASE_URL",
+        "RAADIO_STATE_DIR",
+    )}
+    if path and path.exists():
+        for line in path.read_text(encoding="utf-8-sig").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                env[k.strip()] = v.strip().strip('"').strip("'")
     return env
 
 
@@ -755,7 +777,8 @@ class Recorder:
 
         def lan_url():
             if "url" not in lan:
-                lan["url"] = f"http://{lan_address()}:{port}"
+                custom = self.env.get("PUBLIC_URL") or self.env.get("LAN_URL") or self.env.get("BASE_URL")
+                lan["url"] = custom.rstrip("/") if custom else f"http://{lan_address()}:{port}"
             return lan["url"]
         webserver.start(self.store, port=port, auth=auth, lan=lan_url)
         # aadressi leidmine võib aeglane olla – ära hoia käivitust kinni
@@ -773,6 +796,16 @@ class Recorder:
                         "Invoke-CimMethod -MethodName Terminate | Out-Null"], capture_output=True, **NO_WINDOW)
 
     def run(self):
+        def sig_handler(*_):
+            log("signaal vastuvõetud, sulgen...")
+            sys.exit(0)
+
+        try:
+            signal.signal(signal.SIGTERM, sig_handler)
+            signal.signal(signal.SIGINT, sig_handler)
+        except (ValueError, AttributeError):
+            pass
+
         self.kill_orphans()
         log(f"salvesti käivitus ({self.store.kind}: {getattr(self.store, 'root', None) or getattr(self.store, 'bucket', '')})")
         self.start_web()
