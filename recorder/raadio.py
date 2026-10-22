@@ -54,12 +54,33 @@ def mac_plist():
 
 def systemctl(*args):
     os.environ.setdefault("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
-    return sh(["systemctl", "--user", *args])
+    try:
+        return sh(["systemctl", "--user", *args])
+    except (FileNotFoundError, OSError):
+        return subprocess.CompletedProcess(["systemctl", *args], returncode=1, stdout="", stderr="")
 
 
 def running():
     if LINUX:
-        return systemctl("is-active", "--quiet", LINUX_UNIT).returncode == 0
+        try:
+            if systemctl("is-active", "--quiet", LINUX_UNIT).returncode == 0:
+                return True
+        except (FileNotFoundError, OSError):
+            pass
+        # Konteiner või ilma systemd-ta Linux: kontrolli protsessi või status.json värskust
+        try:
+            res = subprocess.run(["pgrep", "-f", "kuku_recorder.py"], capture_output=True, check=False)
+            if res.returncode == 0:
+                return True
+        except (FileNotFoundError, OSError):
+            pass
+        st = read_status()
+        if st and st.get("updated"):
+            try:
+                return (datetime.now(timezone.utc) - rec.parse_ts(st["updated"])).total_seconds() < 90
+            except Exception:
+                pass
+        return False
     if MAC:
         return sh(["launchctl", "print", f"gui/{os.getuid()}/{mac_label()}"]).returncode == 0
     if WIN:
@@ -168,6 +189,9 @@ def url():
     st = make_storage(e)
     if st.kind != "local" and e.get("WEB") != "1":
         return None
+    custom = e.get("PUBLIC_URL") or e.get("LAN_URL") or e.get("BASE_URL")
+    if custom:
+        return custom.rstrip("/")
     return f"http://{rec.lan_address()}:{e.get('WEB_PORT') or 8788}"
 
 

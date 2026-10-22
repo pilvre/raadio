@@ -58,6 +58,7 @@ R2:                  arvuti = salvesti ──▶ Cloudflare R2 ◀── Cloudfl
 - macOS: `curl -fsSL https://raadio.mastering.ee/install | zsh`
 - Windows 10/11 (PowerShell): `irm https://raadio.mastering.ee/install.ps1 | iex`
 - Linux (systemd; Debian/Ubuntu/Raspberry Pi OS, Fedora, Arch): `curl -fsSL https://raadio.mastering.ee/linux | bash`
+- Linux server (Docker / Compose): `mkdir -p data && chown -R 1000:1000 data && docker compose up -d` (vt `DOCKER.md`)
 
 Vaja: arvuti, mis on pidevalt sees (mitte unerežiimis). Alglaadija paigaldab ffmpeg-i ja Pythoni (macOS: Homebrew – kui seda pole, suuna https://brew.sh; Windows: winget; Linux: apt/dnf/pacman/zypper sudo-ga), laeb koodi kausta `~/Raadiosalvestaja` või `%LOCALAPPDATA%\Raadiosalvestaja\app` ja käivitab `recorder/install.sh|ps1` (Linuxis `install-linux.sh`), mis küsib režiimi ja parooli.
 

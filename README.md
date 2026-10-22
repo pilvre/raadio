@@ -86,6 +86,16 @@ Windowsis: luba installeril lisada tulemüüri reegel (muidu telefon lehte ei n�
 
 Kui projekt on välisel kettal ja macOS küsib Pythonile ligipääsu („Removable Volumes“), luba see.
 
+### Docker (Linux server)
+
+Vt täpsemat juhendit ja pöördproksi (Traefik, Nginx, Caddy) seadistust failis [DOCKER.md](DOCKER.md).
+
+```bash
+mkdir -p data && sudo chown -R 1000:1000 data
+docker compose up -d
+```
+Konteiner töötab turvaliselt tavakasutajana (UID 1000) ja read-only failisüsteemiga; salvestused ja seaded asuvad kaustas `./data`.
+
 ### Kodust väljas: Tailscale
 
 [Tailscale](https://tailscale.com) (tasuta) teeb Maci telefonile kättesaadavaks ka kodust väljas – ilma ruuteri seadistamise ja avaliku aadressita:

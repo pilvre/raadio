@@ -3,6 +3,7 @@ name: Paigalduse test
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -16,6 +17,45 @@ jobs:
       - uses: actions/setup-python@v6
         with: { python-version: "${{ matrix.python }}" }
       - run: pip install -q -r recorder/requirements.txt && python recorder/tests/test_core.py
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Käivita konteiner (docker compose)
+        run: |
+          mkdir -p data && sudo chown -R 1000:1000 data
+          docker compose up -d --build
+      - name: Teenus ja veebileht
+        run: |
+          for i in $(seq 45); do
+            curl -sf -u raadio:salasona http://localhost:8788/api/schedule -o s.json \
+              && python3 -c "import json,sys;sys.exit(0 if json.load(open('s.json'))['episodes'] else 1)" && break
+            sleep 2
+          done
+          docker compose logs
+          python3 -c "import json;d=json.load(open('s.json'));print('jaamu',len(d['stations']),'Kuku saateid',len(d['episodes']));assert d['episodes']"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8788/api/config)" = 401
+          docker compose exec -T raadio raadio
+      - name: Tervisekontroll (HEALTHCHECK)
+        run: |
+          for i in $(seq 25); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' raadiosalvesti 2>/dev/null || true)
+            echo "Konteineri tervis: $status"
+            [ "$status" = "healthy" ] && break
+            sleep 2
+          done
+          test "$status" = "healthy"
+      - name: Testsalvestus ja helifail
+        run: |
+          docker compose exec -T raadio raadio test 20 vikerraadio
+          key=$(curl -s -u raadio:salasona http://localhost:8788/api/recordings | python3 -c "import json,sys;d=json.load(sys.stdin);print(d[0]['key'])")
+          echo "salvestus: $key"
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u raadio:salasona -H 'Range: bytes=0-999' http://localhost:8788/audio/$key)" = 206
+      - name: Konteineri sulgemine
+        if: always()
+        run: docker compose down
 
   windows:
     runs-on: windows-latest
