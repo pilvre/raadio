@@ -1,0 +1,9 @@
+.git
+.github
+.claude
+**/.venv
+**/node_modules
+**/__pycache__
+web/.wrangler
+web/.dev.vars
+site

@@ -1,0 +1,18 @@
+# Raadiosalvesti NAS-is / Dockeris. QNAP: Container Station → Applications → Create → kleebi see.
+# Synology: Container Manager → Project → Create. Muu: `docker compose up -d`.
+# Muuda: parool, NAS-i aadress ja kaustad (vasakpoolne osa enne koolonit on kaust NAS-is).
+services:
+  raadiosalvesti:
+    build: https://github.com/pilvre/raadio.git#main
+    container_name: raadiosalvesti
+    restart: unless-stopped
+    ports:
+      - "8788:8788"
+    environment:
+      RAADIO_USER: raadio
+      RAADIO_PASS: muuda-see-parool
+      RAADIO_HOST: 192.168.1.10   # NAS-i aadress koduvõrgus
+      TZ: Europe/Tallinn
+    volumes:
+      - /share/Multimedia/Raadiosalvesti:/data           # salvestused (QNAP näide; Synology: /volume1/...)
+      - /share/Container/raadiosalvesti/seaded:/config   # seaded

@@ -31,6 +31,7 @@ R2:                  arvuti = salvesti ──▶ Cloudflare R2 ◀── Cloudfl
 | `recorder/webserver.py` | kohaliku režiimi veebiserver; **sama API** mis `web/functions/` |
 | `recorder/raadio.py` | juhtkäsk `raadio` (status/start/stop/restart/log/url/test), Mac + Windows + Linux |
 | `recorder/install.sh`, `install.ps1`, `install-linux.sh` | paigaldus (venv, seaded, taustateenus) |
+| `Dockerfile`, `docker-compose.yml`, `recorder/docker-entrypoint.sh` | NAS / Docker (`RAADIO_DOCKER=1` konteineris) |
 | `site/install`, `site/install.ps1`, `site/linux` | ühe käsu alglaadijad (laevad repo alla ja käivitavad paigalduse) |
 | `web/functions/` | Cloudflare Pages Functions (R2 režiim): `api/schedule`, `api/config`, `api/status`, `api/recordings`, `audio/*`, `_middleware.js` (parool) |
 | `web/public/index.html` | kogu kasutajaliides (üks fail, vanilla JS), `sw.js` = offline/telefoni laadimine |
@@ -58,6 +59,7 @@ R2:                  arvuti = salvesti ──▶ Cloudflare R2 ◀── Cloudfl
 - macOS: `curl -fsSL https://raadio.mastering.ee/install | zsh`
 - Windows 10/11 (PowerShell): `irm https://raadio.mastering.ee/install.ps1 | iex`
 - Linux (systemd; Debian/Ubuntu/Raspberry Pi OS, Fedora, Arch): `curl -fsSL https://raadio.mastering.ee/linux | bash`
+- NAS / Docker (QNAP, Synology, Unraid, TrueNAS): `docker-compose.yml` (build otse GitHubist; `Dockerfile`, `recorder/docker-entrypoint.sh`). Keskkond: `RAADIO_USER`, `RAADIO_PASS` (kirjutatakse igal käivitusel `/config/config.env`-i), `RAADIO_HOST` (NAS-i IP – konteineri sisemine IP pole koduvõrgus nähtav), `TZ`. Kaustad `/data` (salvestused), `/config` (seaded; R2 võtmed saab sinna käsitsi kirjutada). `raadio` töötab konteineris (`docker exec raadiosalvesti raadio`), start/stop/update/parool näitavad Dockeri juhist; uuendus = rebuild.
 
 Vaja: arvuti, mis on pidevalt sees (mitte unerežiimis). Alglaadija paigaldab ffmpeg-i ja Pythoni (macOS: Homebrew – kui seda pole, suuna https://brew.sh; Windows: winget; Linux: apt/dnf/pacman/zypper sudo-ga), laeb koodi kausta `~/Raadiosalvestaja` või `%LOCALAPPDATA%\Raadiosalvestaja\app` ja käivitab `recorder/install.sh|ps1` (Linuxis `install-linux.sh`), mis küsib režiimi ja parooli.
 
@@ -116,4 +118,4 @@ cd web && npm install && printf 'AUTH_USER=t\nAUTH_PASS=t\nDEV_NO_AUTH=1\n' > .d
 RAADIO_CONF=/tmp/test.env recorder/.venv/bin/python recorder/kuku_recorder.py   # eraldi testkoopia (oma seaded/kaust/port)
 ```
 
-Hoia `recorder/webserver.py` ja `web/functions/` API-d sünkroonis – veebileht eeldab mõlemast sama vastust. CI (`.github/workflows/test.yml`) testib paigaldust Macis ja Windowsis.
+Hoia `recorder/webserver.py` ja `web/functions/` API-d sünkroonis – veebileht eeldab mõlemast sama vastust. CI (`.github/workflows/test.yml`) testib paigaldust Macis, Windowsis, Linuxis ja Dockeris.

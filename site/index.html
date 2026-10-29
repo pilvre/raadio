@@ -653,6 +653,9 @@
         word-break: break-all;
       }
     }
+    .modes[hidden] { display: none; }
+    .cmd.multi { align-items: flex-start; }
+    .cmd.multi code { white-space: pre !important; word-break: normal !important; overflow-x: auto; font-size: 13px; }
     .news { background: var(--accent-soft); border-bottom: 1px solid var(--line, #e3e3df); padding: 12px 16px; font-size: 15px; }
     .news div { max-width: 1040px; margin: 0 auto; }
     .forkwarn { background: #fff4d6; color: #5c4400; border-bottom: 1px solid #f0d78c; padding: 12px 16px; font-size: 15px; }
@@ -685,7 +688,7 @@
           arvutist või podcast-pleierist.</p>
         <a class="cta" href="#paigaldus">Paigalda</a><a class="cta ghost" href="https://github.com/pilvre/raadio"
           target="_blank" rel="noopener">Lähtekood</a>
-        <div class="meta">Tasuta · avatud lähtekood (MIT) · Mac, Windows ja Linux · ainult isiklikuks kasutamiseks<span id="views"></span></div>
+        <div class="meta">Tasuta · avatud lähtekood (MIT) · Mac, Windows, Linux ja NAS · ainult isiklikuks kasutamiseks<span id="views"></span></div>
       </div>
       <div class="phone" aria-hidden="true">
         <div class="bar"><span>9:41</span><span>● ● ●</span></div>
@@ -777,7 +780,7 @@
               <path d="M8 20h8M12 16v4" />
             </svg></div>
           <h3>Sinu arvutis</h3>
-          <p>Mac, Windows või Linux (sobib ka Raspberry Pi). Salvestused jäävad arvutisse või soovi korral sinu Cloudflare'i konto pilveruumi.</p>
+          <p>Mac, Windows, Linux või kodune NAS (Docker; sobib ka Raspberry Pi). Salvestused jäävad arvutisse või soovi korral sinu Cloudflare'i konto pilveruumi.</p>
         </div>
       </div>
       <p class="stations">Jaamad: Raadio Kuku, Vikerraadio, Raadio 2, Klassikaraadio, Raadio 4, Raadio Tallinn, Sky Plus, Retro FM, Rock FM, Äripäeva raadio – uusi
@@ -792,7 +795,7 @@
       </p>
 
       <div class="seg" role="tablist" aria-label="Operatsioonisüsteem">
-        <button data-os="mac" role="tab">macOS</button><button data-os="win" role="tab">Windows</button><button data-os="linux" role="tab">Linux</button>
+        <button data-os="mac" role="tab">macOS</button><button data-os="win" role="tab">Windows</button><button data-os="linux" role="tab">Linux</button><button data-os="docker" role="tab">NAS / Docker</button>
       </div>
 
       <div class="modes">
@@ -851,6 +854,29 @@
             laadida.
             Cloudflare R2 puhul saad kuulata ka otse internetist, sõltumata asukohast.
           </div>
+        </li>
+      </ol>
+
+      <ol class="steps" id="stepsDocker" hidden>
+        <li>
+          <div>Kleebi ülal olev tekst NAS-i konteinerirakendusse (QNAP: <b>Container Station → Applications →
+              Create</b>; Synology: <b>Container Manager → Project → Create</b>; mujal <code>docker compose up -d</code>)
+            ja muuda: parool (<code>RAADIO_PASS</code>), NAS-i aadress koduvõrgus (<code>RAADIO_HOST</code>) ning
+            kaustad, kuhu salvestused ja seaded NAS-is lähevad.</div>
+        </li>
+        <li>
+          <div>Käivita. Esimesel korral ehitatakse konteiner otse GitHubist (Python + ffmpeg) – see võtab paar minutit.
+          </div>
+        </li>
+        <li>
+          <div>Ava telefoni või arvuti brauseris <code>http://&lt;NAS-i aadress&gt;:8788</code> ja logi sisse
+            kasutajanime ja parooliga. Edasi on kõik sama mis teistel: Kava, Taimerid, Salvestused, Minu saated,
+            podcasti-voog.</div>
+        </li>
+        <li>
+          <div>Kui lehel on „⬆ Uuendus saadaval“, vali konteinerirakenduses <b>Recreate / Rebuild</b> (või
+            <code>docker compose up -d --build</code>). Seaded ja salvestused jäävad NAS-i kaustadesse alles.
+            Kodust väljas kuulamiseks sobib Tailscale'i NAS-i pakett.</div>
         </li>
       </ol>
 
@@ -996,16 +1022,33 @@
     })();
 
     const BASE = location.origin.startsWith("http") && !location.hostname.match(/^(localhost|127\.)/) ? location.origin : "https://raadio.mastering.ee";
-    const CMD = { mac: `curl -fsSL ${BASE}/install | zsh`, win: `irm ${BASE}/install.ps1 | iex`, linux: `curl -fsSL ${BASE}/linux | bash` };
+    const COMPOSE = `services:
+  raadiosalvesti:
+    build: https://github.com/pilvre/raadio.git#main
+    container_name: raadiosalvesti
+    restart: unless-stopped
+    ports:
+      - "8788:8788"
+    environment:
+      RAADIO_USER: raadio
+      RAADIO_PASS: muuda-see-parool
+      RAADIO_HOST: 192.168.1.10   # NAS-i aadress koduvõrgus
+      TZ: Europe/Tallinn
+    volumes:
+      - /share/Multimedia/Raadiosalvesti:/data           # salvestused (Synology: /volume1/...)
+      - /share/Container/raadiosalvesti/seaded:/config   # seaded`;
+    const CMD = { mac: `curl -fsSL ${BASE}/install | zsh`, win: `irm ${BASE}/install.ps1 | iex`, linux: `curl -fsSL ${BASE}/linux | bash`, docker: COMPOSE };
     const LABEL = {
       mac: "Ava Terminal (Rakendused → Utiliidid → Terminal), kleebi sinna see käsk ja vajuta Enter:",
       win: "Ava PowerShell (Start → kirjuta „PowerShell“ → Enter), kleebi sinna see käsk ja vajuta Enter:",
-      linux: "Ava terminal, kleebi sinna see käsk ja vajuta Enter:"
+      linux: "Ava terminal, kleebi sinna see käsk ja vajuta Enter:",
+      docker: "NAS-i (QNAP, Synology, Unraid, TrueNAS) või muu Dockeri jaoks – docker-compose:"
     };
     const HINT = {
       mac: "Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
       win: "Windows 10 või 11. Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
-      linux: "Debian, Ubuntu, Raspberry Pi OS, Fedora, Arch (systemd). Salvesti käivitub ka ilma sisselogimiseta – sobib hästi Raspberry Pi-le."
+      linux: "Debian, Ubuntu, Raspberry Pi OS, Fedora, Arch (systemd). Salvesti käivitub ka ilma sisselogimiseta – sobib hästi Raspberry Pi-le.",
+      docker: "NAS töötab niikuinii ööpäev läbi – ideaalne salvesti. Konteiner ehitatakse GitHubi koodist; salvestused jäävad NAS-i kausta."
     };
     const ua = navigator.userAgent;
     let os = /Win/i.test(ua) ? "win" : /Linux/i.test(ua) && !/Android/i.test(ua) ? "linux" : "mac", mode = "local";
@@ -1017,8 +1060,12 @@
       document.getElementById("cmd").textContent = CMD[os];
       document.getElementById("cmdLabel").textContent = LABEL[os];
       document.getElementById("hint").textContent = HINT[os];
-      document.getElementById("stepsLocal").hidden = mode !== "local";
-      document.getElementById("stepsR2").hidden = mode !== "r2";
+      const dk = os === "docker";
+      document.querySelector(".cmd").classList.toggle("multi", dk);
+      document.querySelector(".modes").hidden = dk;
+      document.getElementById("stepsDocker").hidden = !dk;
+      document.getElementById("stepsLocal").hidden = dk || mode !== "local";
+      document.getElementById("stepsR2").hidden = dk || mode !== "r2";
     }
     document.querySelectorAll("[data-os]").forEach((b) => (b.onclick = () => { os = b.dataset.os; render(); }));
     document.querySelectorAll("[data-mode]").forEach((b) => (b.onclick = () => { mode = b.dataset.mode; render(); }));

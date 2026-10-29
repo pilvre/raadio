@@ -93,6 +93,8 @@ class LocalStorage:
         try:
             with os.fdopen(fd, "wb") as f:
                 write(f)
+            if key.startswith(("rec/", "live/")):
+                os.chmod(tmp, 0o644)  # mkstemp teeb 0600 – salvestused loetavaks (NAS: kaust üle võrgu, failiuurija)
             # Windows ei luba asendada faili, mida keegi parasjagu loeb (nt pleier) -> proovi uuesti
             for attempt in range(20):
                 try:

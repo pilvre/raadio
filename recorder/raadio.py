@@ -25,7 +25,8 @@ from storage import make_storage  # noqa: E402
 
 MAC = sys.platform == "darwin"
 WIN = sys.platform == "win32"
-LINUX = sys.platform.startswith("linux")
+DOCKER = bool(os.environ.get("RAADIO_DOCKER"))  # konteineris (NAS): teenust haldab Docker
+LINUX = sys.platform.startswith("linux") and not DOCKER
 LINUX_UNIT = "raadiosalvestaja"
 MAC_LABELS = ["ee.raadiosalvestaja", "ee.kuku.salvestaja"]  # uus, vana
 WIN_TASK = "Raadiosalvestaja"
@@ -57,7 +58,15 @@ def systemctl(*args):
     return sh(["systemctl", "--user", *args])
 
 
+DOCKER_HELP = ("Konteineris haldab salvestit Docker (NAS-is nt Container Station):\n"
+               "  taaskäivitus:  docker restart raadiosalvesti\n"
+               "  logi:          docker logs -f raadiosalvesti\n"
+               "  uuendus:       docker compose up -d --build  (Container Stationis: Recreate / Rebuild)")
+
+
 def running():
+    if DOCKER:
+        return True  # see käsk jookseb salvesti konteineri sees
     if LINUX:
         return systemctl("is-active", "--quiet", LINUX_UNIT).returncode == 0
     if MAC:
@@ -78,9 +87,14 @@ def show_access():
     u = url()
     if not u:
         return
+    e = env()
+    if DOCKER:
+        print(f"  🌐 {u}")
+        print(f"  Kasutajanimi: {e.get('WEB_USER') or 'raadio'}" if e.get("WEB_PASS")
+              else "  Parool puudub – lisa docker-compose.yml-i RAADIO_PASS")
+        return
     print(f"  🌐 selles arvutis: http://localhost:{u.rsplit(':', 1)[1]}")
     print(f"  📱 telefonis (samas Wi-Fi-s): {u}")
-    e = env()
     if e.get("WEB_PASS"):
         print(f"  Kasutajanimi: {e.get('WEB_USER') or 'raadio'}   (parool ununes? raadio parool)")
     else:
@@ -283,6 +297,11 @@ def password():
 
 def main(argv):
     cmd = argv[1] if len(argv) > 1 else "status"
+    if DOCKER and cmd in ("start", "stop", "restart", "update", "log"):
+        return print(DOCKER_HELP)
+    if DOCKER and cmd in ("parool", "password"):
+        return print("Konteineris on kasutajanimi ja parool docker-compose.yml-is (RAADIO_USER, RAADIO_PASS) –\n"
+                     "muuda seal ja taaskäivita konteiner (Container Stationis: Recreate).")
     if cmd in ("status", "olek"):
         status()
     elif cmd == "start":

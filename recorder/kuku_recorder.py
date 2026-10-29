@@ -408,6 +408,10 @@ def split_hours(ep):
 def lan_address():
     """Aadress, millega telefon samas võrgus ligi pääseb: Macis <nimi>.local, mujal IP."""
     import socket
+    if os.environ.get("RAADIO_HOST"):  # konteiner (NAS): sisemine IP pole koduvõrgus nähtav
+        return os.environ["RAADIO_HOST"]
+    if os.environ.get("RAADIO_DOCKER"):
+        return "<NAS-i aadress>"
     if sys.platform == "darwin":
         try:
             name = subprocess.run(["scutil", "--get", "LocalHostName"], capture_output=True, text=True, timeout=3).stdout.strip()
@@ -844,7 +848,8 @@ class Recorder:
             "next": upcoming[:5],
             "last_error": self.last_error,
             "version": self.version,
-            "version_date": version_info()[1],  # veebileht (R2) võrdleb oma versiooniga → „uuenda veebilehte“
+            "version_date": version_info()[1],
+            "docker": bool(os.environ.get("RAADIO_DOCKER")),  # veebileht (R2) võrdleb oma versiooniga → „uuenda veebilehte“
             "update": self.update,
         })
 

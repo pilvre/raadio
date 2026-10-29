@@ -142,3 +142,40 @@ jobs:
           ~/.local/bin/raadio start
           ~/.local/bin/raadio restart
           systemctl --user is-active raadiosalvestaja
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Ehita konteiner
+        run: docker build -t raadiosalvesti .
+      - name: Käivita (nagu NAS-is)
+        run: |
+          mkdir -p $PWD/nas/data $PWD/nas/config
+          docker run -d --name raadiosalvesti -p 8788:8788 \
+            -e RAADIO_USER=raadio -e RAADIO_PASS=test -e RAADIO_HOST=192.168.1.10 -e UPDATE_CHECK=0 \
+            -v $PWD/nas/data:/data -v $PWD/nas/config:/config raadiosalvesti
+          for i in $(seq 45); do
+            curl -sf -u raadio:test http://localhost:8788/api/schedule -o s.json \
+              && python3 -c "import json,sys;sys.exit(0 if json.load(open('s.json'))['episodes'] else 1)" && break
+            sleep 2
+          done
+          docker logs raadiosalvesti
+          python3 -c "import json;d=json.load(open('s.json'));print('jaamu',len(d['stations']),'saateid',len(d['episodes']),'lan',d.get('lan'));assert d['episodes'] and d['lan']=='http://192.168.1.10:8788'"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8788/api/config)" = 401
+          sudo cat nas/config/config.env | grep -E "^(STORAGE|LOCAL_DIR|WEB_USER)="
+          docker exec raadiosalvesti raadio
+      - name: Testsalvestus ja helifail
+        run: |
+          docker exec raadiosalvesti raadio test 20 vikerraadio
+          ls -la nas/data/rec/
+          test "$(stat -c %a nas/data/rec/*.mp3 | head -1)" = 644
+          key=$(curl -s -u raadio:test http://localhost:8788/api/recordings | python3 -c "import json,sys;d=json.load(sys.stdin);print(d[0]['key'])")
+          test "$(curl -s -o /dev/null -w '%{http_code}' -u raadio:test -H 'Range: bytes=0-999' http://localhost:8788/audio/$key)" = 206
+      - name: Taaskäivitus säilitab seaded ja salvestused
+        run: |
+          docker restart raadiosalvesti
+          for i in $(seq 30); do curl -sf -u raadio:test http://localhost:8788/api/recordings -o r.json && break; sleep 2; done
+          python3 -c "import json;assert len(json.load(open('r.json')))>=1"
+          docker exec raadiosalvesti raadio restart | grep -q "docker restart"
