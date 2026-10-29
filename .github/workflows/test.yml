@@ -150,6 +150,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: Ehita konteiner
         run: docker build -t raadiosalvesti .
+      - name: Ehita avalikust GitHubist (nagu docker-compose.yml NAS-is)
+        run: docker build -q -t raadio-gh https://github.com/pilvre/raadio.git#main && docker run --rm --entrypoint raadio -e RAADIO_CONF=/tmp/x.env raadio-gh url
       - name: Käivita (nagu NAS-is)
         run: |
           mkdir -p $PWD/nas/data $PWD/nas/config
