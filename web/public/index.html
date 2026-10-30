@@ -66,6 +66,10 @@
   .wd input:checked + span { color: var(--accent); }
   .wd label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
   .list { display: flex; flex-direction: column; gap: 6px; }
+  .search { width: 100%; box-sizing: border-box; font: inherit; font-size: 15px; padding: 10px 12px; margin: 4px 0 6px;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); }
+  .row[hidden], h2[hidden] { display: none; }
+  .search:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
   .row { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--line);
     border-radius: var(--radius); padding: 10px 12px; cursor: pointer; text-align: left; width: 100%; color: inherit; font: inherit; }
   .row.past { opacity: .45; }
@@ -602,6 +606,9 @@ function openRecNow(sid) {
 }
 
 // --- salvestused ---
+let recQuery = "";
+// otsing: väiketähed, täpitähed ilma (kasi = Käsi)
+const fold = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const normShowId = (id) => (id == null ? "muu" : String(id).includes(":") ? String(id) : `kuku:${id}`);
 function renderRec(main) {
   // serveri salvestused + telefoni laaditud (ka need, mis serverist juba kustunud)
@@ -615,10 +622,11 @@ function renderRec(main) {
   let html = "", lastDay = "";
   for (const r of all) {
     const d = dayKey(r.start);
-    if (d !== lastDay) { html += `<h2>${dayLabel(d)} · ${new Date(d + "T12:00:00").toLocaleDateString("et-EE")}</h2>`; lastDay = d; }
+    if (d !== lastDay) { html += `<h2 data-day="${d}">${dayLabel(d)} · ${new Date(d + "T12:00:00").toLocaleDateString("et-EE")}</h2>`; lastDay = d; }
     const p = pos[r.key], prog = !r.live && p && r.duration ? ` · kuulatud ${Math.round(p / r.duration * 100)}%` : "";
     const unavail = isOffline && !offline.has(r.key);
-    html += `<div class="row ${unavail ? "unavail" : ""}" data-key="${esc(r.key)}">
+    const words = [r.show, r.title, r.station_name, r.description, dayLabel(d), new Date(d + "T12:00:00").toLocaleDateString("et-EE"), r.locked ? "lukus lukustatud" : ""].join(" ");
+    html += `<div class="row ${unavail ? "unavail" : ""}" data-key="${esc(r.key)}" data-day="${d}" data-q="${esc(fold(words))}">
       ${r.thumbnail ? `<img src="${esc(r.thumbnail)}" alt="" loading="lazy">` : ""}
       <span class="body"><div class="name">${esc(r.show)}${r.live ? '<span class="tag live">salvestamisel</span>' : ""}${r.incomplete ? '<span class="tag">katkestatud</span>' : ""}${downloading[r.key] != null ? `<span class="tag dl dlp">laadin ${downloading[r.key]}%</span>` : ""}${r.rerun ? '<span class="tag">kordus</span>' : ""}</div>
       <div class="sub">${esc(r.station_name || "Raadio Kuku")} · ${fmtTime(r.start)}–${fmtTime(r.end)}${r.parts > 1 ? ` · osa ${r.part}/${r.parts}` : ""} · ${r.live ? "seni " : ""}${dur(r.duration)}${prog} · ${Math.round(r.size / 1048576)} MB</div></span>
@@ -630,8 +638,19 @@ function renderRec(main) {
       </span>`}
     </div>`;
   }
-  main.innerHTML = `<div class="list">${html}</div>${usageSection()}`;
+  main.innerHTML = `<input class="search" id="recQ" type="search" placeholder="Otsi salvestustest (saade, jaam, kuupäev)…" value="${esc(recQuery)}">
+    <div class="list">${html}</div><div class="empty" id="recNone" hidden>Ei leidnud midagi.</div>${usageSection()}`;
   bindSecs(main);
+  const applyQuery = () => {
+    const words = fold(recQuery).split(/\s+/).filter(Boolean);
+    let any = false;
+    main.querySelectorAll(".list [data-q]").forEach((el) => { el.hidden = !words.every((w) => el.dataset.q.includes(w)); any ||= !el.hidden; });
+    main.querySelectorAll(".list h2[data-day]").forEach((h) => (h.hidden = !main.querySelector(`.list [data-q][data-day="${h.dataset.day}"]:not([hidden])`)));
+    $("#recNone", main).hidden = any;
+  };
+  const q = $("#recQ", main);
+  q.oninput = () => { recQuery = q.value; applyQuery(); };
+  applyQuery();
   const find = (k) => all.find((r) => r.key === k);
   main.querySelectorAll("[data-key]").forEach((el) => el.onclick = (e) => {
     if (e.target.closest(".acts")) return;
