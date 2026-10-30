@@ -749,9 +749,13 @@ class Recorder:
                 day = parse_ts(m.get("episode_start", m["start"])).astimezone().date().isoformat()
                 episodes.setdefault((norm_id(m.get("show_id")), day), []).append(m)
 
+            # 🔒 lukustatud saatepäev ei kustu ega loe „keep N“ arvestusse
+            locked = set((self.get_json("locked.json", None) or {}).get("keys", []))
             doomed = []
             by_show = {}
             for (sid, ep_start), parts in episodes.items():
+                if any(p.get("key") in locked for p in parts):
+                    continue
                 keep = (shows.get(sid) or {}).get("keep")
                 if keep:
                     by_show.setdefault(sid, []).append((ep_start, parts))

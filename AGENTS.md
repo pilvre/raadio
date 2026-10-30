@@ -42,6 +42,7 @@ R2:                  arvuti = salvesti ──▶ Cloudflare R2 ◀── Cloudfl
 - `config.json` – kasutaja valikud (veebileht kirjutab, salvesti loeb): `shows` (terve saade, `keep` = mitu viimast saatepäeva alles), `episodes` (konkreetsed ajad; `auto: true` = brauser koostas ERR-i saate tellimusest), `timers` (jaam + nädalapäevad 0=E … 6=P + `HH:MM`; id `timer:<jaam>-<nimi>` – püsiv, et podcasti-feedi aadress jääks samaks).
 - `schedule.json` – serveripoolne kava (Kuku, Sky Media jaamad, Äripäeva raadio).
 - `err_schedule.json` – ERR-i kava, mille kasutaja tõi ERR-i lehelt järjehoidjaga (`/api/err-schedule`; vt veaotsing). Veebileht koostab sellest tellitud saadete episoodid (`config.episodes`, `auto: true`).
+- `locked.json` – 🔒 lukustatud salvestused (`{"keys": ["rec/….mp3"]}`; `PUT /api/recordings?key=…&locked=1|0`). Lukustatud saatepäeva (kõik tunniosad) koristus ei kustuta ja see ei loe `keep` arvestusse; käsitsi kustutamine küsib kinnitust.
 - `status.json` – salvesti olek (uuendub ~20 s järel; veebileht näitab „Salvesti vaikib“, kui üle 3 min vana).
 - `rec/<kuupäev>_<HHMM>_<jaam>_<saade>.mp3` + `.json` (metaandmed) – valmis salvestused.
 - `config.json` → `feed_token` – privaatse podcasti-feedi võti: `/feed/<võti>/koik.xml`, `/feed/<võti>/<saate-slug>.xml`, helifailid `/feed/<võti>/audio/rec/…`. Saate feedi aadress tuleb saate/taimeri id-st – kustutamine ja uuesti lisamine ei muuda seda (muutub ainult võtme vahetamisel). Võti asendab parooli ainult nende aadresside jaoks (`web/functions/feed/`, `recorder/webserver.py`). Soovita AntennaPodi / Apple Podcastsi; mitte serveripõhiseid rakendusi (Pocket Casts, Overcast), sest need lekitaksid võtme ja ei ulatu kohtvõrku.
@@ -51,7 +52,7 @@ R2:                  arvuti = salvesti ──▶ Cloudflare R2 ◀── Cloudfl
 ### Käitumine
 
 - Salvestus algab 1 min varem, lõpeb 2 min hiljem; üle tunni pikad saated lõigatakse täistundide kaupa (30 s kattuvusega).
-- Kava kontroll iga 20 s; koristus pärast iga salvestust ja iga 30 min (saate `keep` või vaikimisi 14 päeva).
+- Kava kontroll iga 20 s; koristus pärast iga salvestust ja iga 30 min (saate `keep` või vaikimisi 14 päeva; 🔒 lukustatud jäävad alles).
 - Mono-liitmine `pan=mono|c0=0.45*c0+0.45*c1` (mitte `-ac 1` – see klipiks, sest vood on juba 0 dBFS). Stereo (`config.json` → `audio.stereo`, 128 kbps) kasutab `-ac 2`; seade loetakse iga salvestuse alguses.
 
 ## Paigaldus

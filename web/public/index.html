@@ -547,6 +547,8 @@ const ICON = {
   mp3: '<svg viewBox="0 0 24 24"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>',
   phone: '<svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></svg>',
   del: '<svg viewBox="0 0 24 24"><path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/></svg>',
+  lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  unlock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg>',
 };
 
 // --- salvesta kohe (otse-eeter valitud ajaks) ---
@@ -600,6 +602,7 @@ function openRecNow(sid) {
 }
 
 // --- salvestused ---
+const normShowId = (id) => (id == null ? "muu" : String(id).includes(":") ? String(id) : `kuku:${id}`);
 function renderRec(main) {
   // serveri salvestused + telefoni laaditud (ka need, mis serverist juba kustunud)
   const all = [...recordings, ...[...offline.values()].filter((m) => !recordings.some((r) => r.key === m.key))];
@@ -622,6 +625,7 @@ function renderRec(main) {
       ${r.live ? "" : `<span class="acts">
         ${onServer(r) ? `<a class="ib" href="/audio/${esc(r.key)}?dl=${encodeURIComponent(fileName(r))}" download="${esc(fileName(r))}" title="Salvesta MP3 failina" aria-label="Salvesta MP3 failina">${ICON.mp3}</a>` : ""}
         ${OFFLINE_OK ? `<button class="ib ${offline.has(r.key) ? "on" : ""}" data-phone="${esc(r.key)}" title="${offline.has(r.key) ? "Telefonis – eemalda" : "Laadi telefoni (kuulamiseks ilma võrguta)"}" aria-label="Telefoni">${ICON.phone}</button>` : ""}
+        ${onServer(r) ? `<button class="ib ${r.locked ? "on" : ""}" data-lock="${esc(r.key)}" title="${r.locked ? "Lukustatud – ei kustu automaatselt (klõps eemaldab luku)" : "Lukusta – ei kustu automaatselt"}" aria-label="Lukusta">${r.locked ? ICON.lock : ICON.unlock}</button>` : ""}
         ${onServer(r) ? `<button class="ib del" data-del="${esc(r.key)}" title="Kustuta" aria-label="Kustuta">${ICON.del}</button>` : ""}
       </span>`}
     </div>`;
@@ -640,7 +644,20 @@ function renderRec(main) {
     if (!offline.has(r.key)) return downloadToPhone(r);
     if (confirm("Eemaldada telefonist?")) removeFromPhone(r.key);
   });
+  // 🔒 lukk kehtib kogu saatepäevale (tunniosad koos), nagu automaatne koristus neid käsitleb
+  const epKey = (r) => `${normShowId(r.show_id)}|${dayKey(r.episode_start || r.start)}`;
+  main.querySelectorAll("[data-lock]").forEach((b) => b.onclick = async () => {
+    const r = find(b.dataset.lock), on = !r.locked;
+    const parts = recordings.filter((x) => !x.live && epKey(x) === epKey(r));
+    try {
+      for (const x of parts) await api(`/api/recordings?key=${encodeURIComponent(x.key)}&locked=${on ? 1 : 0}`, { method: "PUT" });
+      for (const x of parts) x.locked = on;
+      toast(on ? `Lukustatud${parts.length > 1 ? ` (${parts.length} osa)` : ""} – ei kustu automaatselt` : "Lukk eemaldatud");
+    } catch (e) { console.error(e); toast("Lukustamine ebaõnnestus – kas salvesti on uuendatud?"); }
+    render();
+  });
   main.querySelectorAll("[data-del]").forEach((b) => b.onclick = async () => {
+    if (find(b.dataset.del)?.locked && !confirm("See salvestus on lukustatud. Kustutada ikkagi?")) return;
     if (!confirm(`Kustutada salvestus?${offline.has(b.dataset.del) ? " (Telefoni koopia jääb alles.)" : ""}`)) return;
     await api("/api/recordings?key=" + encodeURIComponent(b.dataset.del), { method: "DELETE" });
     recordings = recordings.filter((r) => r.key !== b.dataset.del); render();

@@ -260,11 +260,15 @@ def make_handler(store, auth, lan=None):
                 if p == "/api/recordings":
                     if method == "GET":
                         return self.api_recordings()
+                    key = (q.get("key") or [""])[0]
+                    if method in ("PUT", "DELETE") and not re.fullmatch(r"rec/[\w.-]+\.mp3", key):
+                        return self.send_text("bad key", 400)
+                    if method == "PUT":  # ?key=…&locked=1|0
+                        self.set_locked(key, (q.get("locked") or ["1"])[0] == "1")
+                        return self.send_json({"key": key, "locked": (q.get("locked") or ["1"])[0] == "1"})
                     if method == "DELETE":
-                        key = (q.get("key") or [""])[0]
-                        if not re.fullmatch(r"rec/[\w.-]+\.mp3", key):
-                            return self.send_text("bad key", 400)
                         store.delete([key, key[:-4] + ".json"])
+                        self.set_locked(key, False)
                         self.send_response(204)
                         self.end_headers()
                         return
@@ -306,7 +310,16 @@ def make_handler(store, auth, lan=None):
             # uuemad päevad eespool, päeva sees kronoloogiliselt
             items.sort(key=lambda m: m["start"])
             items.sort(key=lambda m: tallinn_day(m["start"]), reverse=True)
+            locked = set((store.get_json("locked.json", None) or {}).get("keys", []))
+            for m in items:
+                m["locked"] = m["key"] in locked
             self.send_json(items)
+
+        def set_locked(self, key, on):
+            """🔒 lukustatud salvestust automaatne koristus ei kustuta (locked.json – sama mis web/functions)."""
+            keys = set((store.get_json("locked.json", None) or {}).get("keys", []))
+            keys = keys | {key} if on else keys - {key}
+            store.put_json("locked.json", {"keys": sorted(keys)})
 
         def audio(self, key, q, head=False):
             if not KEY_RE.match(key) or not store.exists(key):
