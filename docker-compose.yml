@@ -14,5 +14,5 @@ services:
       RAADIO_HOST: 192.168.1.10   # NAS-i aadress koduvõrgus
       TZ: Europe/Tallinn
     volumes:
-      - /share/Multimedia/Raadiosalvesti:/data           # salvestused (QNAP näide; Synology: /volume1/...)
+      - /share/Multimedia/Raadiosalvesti:/data           # salvestused – olemasoleva ühiskausta alla! (QNAP näide; Synology: /volume1/...)
       - /share/Container/raadiosalvesti/seaded:/config   # seaded

@@ -73,7 +73,7 @@ curl -fsSL https://raadio.mastering.ee/install | zsh
 curl -fsSL https://raadio.mastering.ee/linux | bash
 ```
 
-**NAS / Docker** (QNAP Container Station, Synology Container Manager, Unraid, TrueNAS või `docker compose`): kopeeri [`docker-compose.yml`](docker-compose.yml), muuda parool (`RAADIO_PASS`), NAS-i aadress (`RAADIO_HOST`) ja kaustad, käivita. Konteiner ehitatakse GitHubi koodist; salvestused on `/data`, seaded `/config` all. Uuendus: konteinerirakenduses *Recreate/Rebuild* või `docker compose up -d --build`. Olek: `docker exec raadiosalvesti raadio`, logi: `docker logs -f raadiosalvesti`.
+**NAS / Docker** (QNAP Container Station, Synology Container Manager, Unraid, TrueNAS või `docker compose`): kopeeri [`docker-compose.yml`](docker-compose.yml), muuda parool (`RAADIO_PASS`), NAS-i aadress (`RAADIO_HOST`) ja kaustad (salvestuste kaust olemasoleva ühiskausta alla – loo see enne File Stationis, muidu võib Docker selle teha süsteemikettale), käivita. Konteiner ehitatakse GitHubi koodist; salvestused on `/data`, seaded `/config` all. Uuendus: konteinerirakenduses *Recreate/Rebuild* või `docker compose up -d --build`. Olek: `docker exec raadiosalvesti raadio`, logi: `docker logs -f raadiosalvesti`.
 
 **Windows 10/11** (PowerShell):
 ```powershell

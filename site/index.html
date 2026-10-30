@@ -862,7 +862,9 @@
           <div>Kleebi ülal olev tekst NAS-i konteinerirakendusse (QNAP: <b>Container Station → Applications →
               Create</b>; Synology: <b>Container Manager → Project → Create</b>; mujal <code>docker compose up -d</code>)
             ja muuda: parool (<code>RAADIO_PASS</code>), NAS-i aadress koduvõrgus (<code>RAADIO_HOST</code>) ning
-            kaustad, kuhu salvestused ja seaded NAS-is lähevad.</div>
+            kaustad, kuhu salvestused ja seaded NAS-is lähevad. Salvestuste kaust peab asuma olemasoleva ühiskausta all
+            (QNAP: <code>/share/&lt;ühiskaust&gt;/…</code>, Synology: <code>/volume1/&lt;ühiskaust&gt;/…</code>) – kõige
+            kindlam on see enne File Stationis luua, muidu võib Docker selle teha süsteemikettale.</div>
         </li>
         <li>
           <div>Käivita. Esimesel korral ehitatakse konteiner otse GitHubist (Python + ffmpeg) – see võtab paar minutit.
