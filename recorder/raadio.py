@@ -61,7 +61,7 @@ def systemctl(*args):
 DOCKER_HELP = ("Konteineris haldab salvestit Docker (NAS-is nt Container Station):\n"
                "  taaskäivitus:  docker restart raadiosalvesti\n"
                "  logi:          docker logs -f raadiosalvesti\n"
-               "  uuendus:       docker compose up -d --build  (Container Stationis: Recreate / Rebuild)")
+               "  uuendus:       docker compose pull && docker compose up -d  (Container Stationis: Recreate)")
 
 
 def running():

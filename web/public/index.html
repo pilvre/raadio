@@ -400,7 +400,7 @@ function renderStatus() {
     + (!status.update && webOutdated() ? ` · <a href="#" id="webupd" style="color:var(--accent);font-weight:600">⬆ Uuenda veebilehte</a>` : "");
   const u = $("#upd", el);
   if (u) u.onclick = (e) => { e.preventDefault();
-    alert(`Uus versioon: ${status.update.latest}${status.update.notes ? "\n" + status.update.notes : ""}\n\n${status.docker ? "Uuenda konteinerit: NAS-is Container Station → rakendus → Recreate/Rebuild või käsuga\n\n    docker compose up -d --build" : "Uuenda arvutis: ava terminal (Windowsis PowerShell) ja kirjuta\n\n    raadio update"}\n\nSeaded ja salvestused jäävad alles.${storageKind === "r2" ? "\n\n" + FORK_HELP : ""}`); };
+    alert(`Uus versioon: ${status.update.latest}${status.update.notes ? "\n" + status.update.notes : ""}\n\n${status.docker ? "Uuenda konteinerit: NAS-is Container Station → rakendus → Recreate või käsuga\n\n    docker compose pull && docker compose up -d" : "Uuenda arvutis: ava terminal (Windowsis PowerShell) ja kirjuta\n\n    raadio update"}\n\nSeaded ja salvestused jäävad alles.${storageKind === "r2" ? "\n\n" + FORK_HELP : ""}`); };
   const w = $("#webupd", el);
   if (w) w.onclick = (e) => { e.preventDefault(); alert(`Salvesti on uuem kui see veebileht.\n\n${FORK_HELP}`); };
 }

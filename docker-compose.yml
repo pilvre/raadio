@@ -3,7 +3,8 @@
 # Muuda: parool, NAS-i aadress ja kaustad (vasakpoolne osa enne koolonit on kaust NAS-is).
 services:
   raadiosalvesti:
-    build: https://github.com/pilvre/raadio.git#main
+    image: ghcr.io/pilvre/raadio:latest   # valmis tõmmis (amd64, arm64, armv7)
+    pull_policy: always                    # Recreate / up toob uue versiooni
     container_name: raadiosalvesti
     restart: unless-stopped
     ports:

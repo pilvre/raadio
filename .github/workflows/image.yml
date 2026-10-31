@@ -1,0 +1,35 @@
+# Valmis konteineritõmmis NAS-idele (ghcr.io/pilvre/raadio) – NAS ei pea ise GitHubist ehitama.
+name: Konteineritõmmis
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  image:
+    if: github.repository == 'pilvre/raadio'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ghcr.io/pilvre/raadio:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/pilvre/raadio
+            org.opencontainers.image.title=Raadiosalvesti
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

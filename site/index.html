@@ -868,7 +868,7 @@
             kindlam on see enne File Stationis luua, muidu võib Docker selle teha süsteemikettale.</div>
         </li>
         <li>
-          <div>Käivita. Esimesel korral ehitatakse konteiner otse GitHubist (Python + ffmpeg) – see võtab paar minutit.
+          <div>Käivita. NAS laeb alla valmis konteineri (~150 MB) – see võtab minuti-paar.
           </div>
         </li>
         <li>
@@ -877,8 +877,8 @@
             podcasti-voog.</div>
         </li>
         <li>
-          <div>Kui lehel on „⬆ Uuendus saadaval“, vali konteinerirakenduses <b>Recreate / Rebuild</b> (või
-            <code>docker compose up -d --build</code>). Seaded ja salvestused jäävad NAS-i kaustadesse alles.
+          <div>Kui lehel on „⬆ Uuendus saadaval“, vali konteinerirakenduses <b>Recreate</b> (või
+            <code>docker compose pull && docker compose up -d</code>). Seaded ja salvestused jäävad NAS-i kaustadesse alles.
             Kodust väljas kuulamiseks sobib Tailscale'i NAS-i pakett.</div>
         </li>
       </ol>
@@ -1027,7 +1027,8 @@
     const BASE = location.origin.startsWith("http") && !location.hostname.match(/^(localhost|127\.)/) ? location.origin : "https://raadio.mastering.ee";
     const COMPOSE = `services:
   raadiosalvesti:
-    build: https://github.com/pilvre/raadio.git#main
+    image: ghcr.io/pilvre/raadio:latest
+    pull_policy: always
     container_name: raadiosalvesti
     restart: unless-stopped
     ports:
@@ -1051,7 +1052,7 @@
       mac: "Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
       win: "Windows 10 või 11. Käsk laeb installeri aadressilt raadio.mastering.ee; kood on GitHubis üle vaadatav.",
       linux: "Debian, Ubuntu, Raspberry Pi OS, Fedora, Arch (systemd). Salvesti käivitub ka ilma sisselogimiseta – sobib hästi Raspberry Pi-le.",
-      docker: "NAS töötab niikuinii ööpäev läbi – ideaalne salvesti. Konteiner ehitatakse GitHubi koodist; salvestused jäävad NAS-i kausta."
+      docker: "NAS töötab niikuinii ööpäev läbi – ideaalne salvesti. Valmis konteiner tuleb GitHubist (ghcr.io); salvestused jäävad NAS-i kausta."
     };
     const ua = navigator.userAgent;
     let os = /Win/i.test(ua) ? "win" : /Linux/i.test(ua) && !/Android/i.test(ua) ? "linux" : "mac", mode = "local";
