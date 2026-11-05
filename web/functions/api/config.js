@@ -34,7 +34,7 @@ export async function onRequestPut({ env, request }) {
       .map((e) => ({
         id: normId(e.id), station: str(e.station || "kuku", 40),
         start: str(e.start, 40), end: str(e.end, 40), title: str(e.title), rerun: !!e.rerun,
-        description: str(e.description, 500),
+        description: str(e.description, 2000),
         show: e.show ? { id: normId(e.show.id), name: str(e.show.name), description: str(e.show.description, 300),
           thumbnail: e.show.thumbnail ? str(e.show.thumbnail, 500) : null } : undefined,
         auto: !!e.auto,

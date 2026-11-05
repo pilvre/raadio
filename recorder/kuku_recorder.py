@@ -141,7 +141,7 @@ def norm_id(x):
     return x if isinstance(x, str) and ":" in x else f"kuku:{x}"
 
 
-def strip_html(s, limit=400):
+def strip_html(s, limit=2000):
     s = re.sub(r"<[^>]+>", " ", s or "")
     s = re.sub(r"\s+", " ", s).strip()
     return s[:limit]

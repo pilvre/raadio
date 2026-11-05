@@ -60,7 +60,7 @@ def normalize_err_schedule(body, station_ids):
             sh = e.get("show") or {}
             eps.append({
                 "id": _s(e["id"], 80), "station": e["station"], "start": _s(e["start"], 40), "end": _s(e["end"], 40),
-                "title": _s(e.get("title")), "rerun": bool(e.get("rerun")), "description": _s(e.get("description"), 500),
+                "title": _s(e.get("title")), "rerun": bool(e.get("rerun")), "description": _s(e.get("description"), 2000),
                 "show": {"id": _s(sh.get("id"), 80), "name": _s(sh.get("name")), "description": "",
                          "thumbnail": _s(sh["thumbnail"], 500) if sh.get("thumbnail") else None},
             })
@@ -82,7 +82,7 @@ def normalize_config(body):
         eps.append({
             "id": _norm_id(e["id"]), "station": _s(e.get("station") or "kuku", 40),
             "start": _s(e.get("start"), 40), "end": _s(e.get("end"), 40), "title": _s(e.get("title")),
-            "rerun": bool(e.get("rerun")), "description": _s(e.get("description"), 500),
+            "rerun": bool(e.get("rerun")), "description": _s(e.get("description"), 2000),
             **({"show": {"id": _norm_id(sh["id"]), "name": _s(sh.get("name")),
                          "description": _s(sh.get("description")),
                          "thumbnail": _s(sh["thumbnail"], 500) if sh.get("thumbnail") else None}} if sh else {}),

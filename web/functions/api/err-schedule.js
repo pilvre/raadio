@@ -17,7 +17,7 @@ export async function onRequestPut({ env, request }) {
     .filter((e) => ERR_IDS.has(e.station) && Date.parse(e.end) > Date.parse(e.start))
     .map((e) => ({
       id: str(e.id, 80), station: e.station, start: str(e.start, 40), end: str(e.end, 40),
-      title: str(e.title), rerun: !!e.rerun, description: str(e.description, 500),
+      title: str(e.title), rerun: !!e.rerun, description: str(e.description, 2000),
       show: { id: str(e.show?.id, 80), name: str(e.show?.name), description: "",
         thumbnail: e.show?.thumbnail ? str(e.show.thumbnail, 500) : null },
     }));

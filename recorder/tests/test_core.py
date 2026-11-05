@@ -116,6 +116,10 @@ def test_description_updates_after_air():
     assert k.description_updates(metas, [{"start": start, "description": "Üldine tutvustus", "show": show}], now) == []
 
 
+def test_strip_html_keeps_long_description():
+    assert len(k.strip_html("<p>" + "a" * 1500 + "</p>")) == 1500
+
+
 def test_update_only_when_newer():
     assert k.is_newer("b", "2026-10-12T20:00:00+03:00", "a", "2026-10-12T19:00:00+03:00")
     assert not k.is_newer("b", "2026-10-12T17:50:56+03:00", "a", "2026-10-12T20:10:00+03:00")  # leht veel vana

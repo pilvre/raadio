@@ -79,7 +79,8 @@
   .row .body { flex: 1; min-width: 0; }
   .row .name { font-weight: 600; }
   .row .sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .row .desc { font-size: 13px; color: var(--muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .row .desc { font-size: 13px; color: var(--muted); margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; cursor: pointer; }
+  .row .desc.open { display: block; }
   .tag { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px;
     background: var(--line); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
   .tag.live { background: var(--accent); color: #fff; }
@@ -208,7 +209,7 @@ const stationName = (id) => stationById(id)?.name || id || "";
 // Kasutaja toob kava ise: järjehoidja-nupp loeb ERR-i lehel (päris brauseris, ERR-i enda API) kava ja saadab selle
 // postMessage'iga siia → /api/err-schedule (err_schedule.json) → nähtav kõigis seadmetes, tellimused nagu varem.
 const ERR_ORIGIN = "https://eestiraadio.err.ee";
-const stripHtml = (h, n = 400) => (h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
+const stripHtml = (h, n = 2000) => (h || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, n);
 let errSched = null, errHelpOpen = false; // {updated, episodes}
 const errStations = () => stations.filter((s) => s.schedule?.type === "err");
 function applyErrSched() {
@@ -256,7 +257,7 @@ const it=[],seen=new Set();
 for(const c of C)for(const o of[1,4,7]){const[y,m,d]=new Date(Date.now()+o*864e5).toLocaleDateString("sv-SE",{timeZone:Z}).split("-").map(Number);
 try{let j=null;for(const dt of[0,3600,-3600]){const r=await fetch("/api/v1/getSchedule/"+c+"/"+(mid(y,m,d)+dt)+"?adjacentDays=1");if(!r.ok)continue;j=await r.json();if(((j.data&&j.data.channels)||[]).some(ch=>(ch.items||[]).length))break}if(!j)continue;
 for(const ch of(j.data&&j.data.channels)||[])for(const x of ch.items||[]){if(seen.has(c+x.id))continue;seen.add(c+x.id);
-it.push({c,id:x.id,r:x.radiomanId,p:x.programName,s:x.seriesName,h:x.heading,l:(x.lead||"").slice(0,600),a:x.startTime,b:x.endTime,f:x.photo&&x.photo.photoUrlBase})}}catch(e){}}
+it.push({c,id:x.id,r:x.radiomanId,p:x.programName,s:x.seriesName,h:x.heading,l:(x.lead||"").slice(0,2000),a:x.startTime,b:x.endTime,f:x.photo&&x.photo.photoUrlBase})}}catch(e){}}
 if(!it.length){alert("ERR-i kava ei õnnestunud lugeda.");return}
 let ok=false;addEventListener("message",e=>{if(e.origin===T&&e.data==="raadio-err-ok")ok=true});
 for(let i=0;i<60&&!ok;i++){try{w.postMessage({type:"raadio-err",v:1,items:it},T)}catch(e){}await new Promise(r=>setTimeout(r,500))}
@@ -608,6 +609,7 @@ function openRecNow(sid) {
 
 // --- salvestused ---
 let recQuery = "";
+const descOpen = new Set();  // lahti klõpsatud kirjeldused (salvestuse võti)
 // otsing: väiketähed, täpitähed ilma (kasi = Käsi)
 const fold = (s) => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const normShowId = (id) => (id == null ? "muu" : String(id).includes(":") ? String(id) : `kuku:${id}`);
@@ -621,8 +623,11 @@ function renderRec(main) {
   const onServer = (r) => !isOffline && recordings.some((x) => x.key === r.key);
   const pos = store.get("pos", {});
   let html = "", lastDay = "";
+  const described = new Set();  // sama saatepäeva tunniosadel näita kirjeldust üks kord
   for (const r of all) {
     const d = dayKey(r.start);
+    const epId = `${normShowId(r.show_id)}|${r.episode_start || r.start}`, showDesc = r.description && !described.has(epId);
+    if (showDesc) described.add(epId);
     if (d !== lastDay) { html += `<h2 data-day="${d}">${dayLabel(d)} · ${new Date(d + "T12:00:00").toLocaleDateString("et-EE")}</h2>`; lastDay = d; }
     const p = pos[r.key], prog = !r.live && p && r.duration ? ` · kuulatud ${Math.round(p / r.duration * 100)}%` : "";
     const unavail = isOffline && !offline.has(r.key);
@@ -630,7 +635,7 @@ function renderRec(main) {
     html += `<div class="row ${unavail ? "unavail" : ""}" data-key="${esc(r.key)}" data-day="${d}" data-q="${esc(fold(words))}">
       ${r.thumbnail ? `<img src="${esc(r.thumbnail)}" alt="" loading="lazy">` : ""}
       <span class="body"><div class="name">${esc(r.show)}${r.live ? '<span class="tag live">salvestamisel</span>' : ""}${r.incomplete ? '<span class="tag">katkestatud</span>' : ""}${downloading[r.key] != null ? `<span class="tag dl dlp">laadin ${downloading[r.key]}%</span>` : ""}${r.rerun ? '<span class="tag">kordus</span>' : ""}</div>
-      <div class="sub">${esc(r.station_name || "Raadio Kuku")} · ${fmtTime(r.start)}–${fmtTime(r.end)}${r.parts > 1 ? ` · osa ${r.part}/${r.parts}` : ""} · ${r.live ? "seni " : ""}${dur(r.duration)}${prog} · ${Math.round(r.size / 1048576)} MB</div>${r.description ? `<div class="desc">${esc(r.description)}</div>` : ""}</span>
+      <div class="sub">${esc(r.station_name || "Raadio Kuku")} · ${fmtTime(r.start)}–${fmtTime(r.end)}${r.parts > 1 ? ` · osa ${r.part}/${r.parts}` : ""} · ${r.live ? "seni " : ""}${dur(r.duration)}${prog} · ${Math.round(r.size / 1048576)} MB</div>${showDesc ? `<div class="desc ${descOpen.has(r.key) ? "open" : ""}" data-desc="${esc(r.key)}">${esc(r.description)}</div>` : ""}</span>
       ${r.live ? "" : `<span class="acts">
         ${onServer(r) ? `<a class="ib" href="/audio/${esc(r.key)}?dl=${encodeURIComponent(fileName(r))}" download="${esc(fileName(r))}" title="Salvesta MP3 failina" aria-label="Salvesta MP3 failina">${ICON.mp3}</a>` : ""}
         ${OFFLINE_OK ? `<button class="ib ${offline.has(r.key) ? "on" : ""}" data-phone="${esc(r.key)}" title="${offline.has(r.key) ? "Telefonis – eemalda" : "Laadi telefoni (kuulamiseks ilma võrguta)"}" aria-label="Telefoni">${ICON.phone}</button>` : ""}
@@ -655,6 +660,11 @@ function renderRec(main) {
   const find = (k) => all.find((r) => r.key === k);
   main.querySelectorAll("[data-key]").forEach((el) => el.onclick = (e) => {
     if (e.target.closest(".acts")) return;
+    const dsc = e.target.closest("[data-desc]");
+    if (dsc) {
+      dsc.classList.toggle("open") ? descOpen.add(dsc.dataset.desc) : descOpen.delete(dsc.dataset.desc);
+      return;
+    }
     const r = find(el.dataset.key);
     if (!navigator.onLine && !offline.has(r.key)) return toast("Pole telefoni laaditud");
     play(r);
