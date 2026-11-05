@@ -100,6 +100,22 @@ def test_parse_aripaev_next_payload():
     assert eps[2]["title"] == "Muusika 22.10.2026" and eps[0]["id"] == "aripaev:hommikuprogramm@2026-10-22T0645"
 
 
+def test_description_updates_after_air():
+    now = datetime(2026, 11, 6, 12, tzinfo=timezone.utc)
+    start = (now - timedelta(days=1)).isoformat()
+    old = (now - timedelta(days=8)).isoformat()
+    show = {"id": "kuku:1", "description": "Üldine tutvustus"}
+    metas = [{"key": "rec/a.mp3", "show_id": "kuku:1", "start": start, "episode_start": start, "description": "Üldine tutvustus"},
+             {"key": "rec/b.mp3", "show_id": "kuku:1", "start": old, "description": ""},
+             {"key": "rec/c.mp3", "show_id": "timer:x", "start": start, "description": ""}]
+    eps = [{"start": start, "description": "Täna: Isamaa reitingud", "show": show},
+           {"start": old, "description": "Liiga vana", "show": show}]
+    assert [(m["key"], d) for m, d in k.description_updates(metas, eps, now)] == [("rec/a.mp3", "Täna: Isamaa reitingud")]
+    metas[0]["description"] = "Täna: Isamaa reitingud"
+    assert k.description_updates(metas, eps, now) == []  # juba olemas → ei kirjuta uuesti
+    assert k.description_updates(metas, [{"start": start, "description": "Üldine tutvustus", "show": show}], now) == []
+
+
 def test_update_only_when_newer():
     assert k.is_newer("b", "2026-10-12T20:00:00+03:00", "a", "2026-10-12T19:00:00+03:00")
     assert not k.is_newer("b", "2026-10-12T17:50:56+03:00", "a", "2026-10-12T20:10:00+03:00")  # leht veel vana

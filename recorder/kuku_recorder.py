@@ -34,6 +34,7 @@ SKY_SCHEDULE_URL = "https://sky.ee/api/radio-stations/{id}/schedule"
 ARIPAEV_SCHEDULE_URL = "https://www.aripaev.ee/raadio/saatekava"  # avalik leht, kava (~3 nädalat) on lehe andmetes
 ERR_SCHEDULE_URL = "https://vikerraadio.err.ee/api/radioSchedule/getTimelineSchedule2?day={d}&month={m}&year={y}&channel={channel}&portal=radio"
 SCHEDULE_DAYS = 7
+ENRICH_DAYS = 7                     # nii kaua uuendatakse valmis salvestuse kirjeldust kavast
 
 PRE_ROLL = timedelta(minutes=1)    # alusta varem
 POST_ROLL = timedelta(minutes=2)   # lõpeta hiljem
@@ -157,7 +158,7 @@ def http_json(url):
 
 def fetch_kuku(st, now):
     url = KUKU_SCHEDULE_URL.format(
-        start=(now - timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        start=(now - timedelta(days=ENRICH_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ"),  # sisu lisatakse sageli pärast eetrit
         end=(now + timedelta(days=SCHEDULE_DAYS)).strftime("%Y-%m-%dT%H:%M:%SZ"),
     )
     out = []
@@ -315,6 +316,22 @@ def err_planned(err_sched, shows, stations, now):
                     "show": {"id": sid, "name": s.get("name") or eps[0]["show"].get("name"), "description": "",
                              "thumbnail": eps[0]["show"].get("thumbnail")},
                 })
+    return out
+
+
+def description_updates(metas, episodes, now):
+    """Jaamad lisavad sisu sageli pärast eetrit: [(meta, uus kirjeldus)] viimaste päevade salvestustele."""
+    found = {}
+    for e in episodes:
+        desc = e.get("description") or ""
+        if desc and desc != (e.get("show") or {}).get("description"):  # saate üldtutvustus ei ole sisu
+            found[(norm_id((e.get("show") or {}).get("id")), parse_ts(e["start"]))] = desc
+    out = []
+    for m in metas:
+        start = parse_ts(m.get("episode_start", m["start"]))
+        desc = found.get((norm_id(m.get("show_id")), start))
+        if desc and desc != m.get("description") and now - start <= timedelta(days=ENRICH_DAYS):
+            out.append((m, desc))
     return out
 
 
@@ -777,6 +794,12 @@ class Recorder:
                 self.store.delete([k, k[:-4] + ".json"])
                 self.meta_cache.pop(k[:-4] + ".json", None)
                 log(f"kustutatud {k}")
+            # kustutatute järel, et ei tekitaks neile uut .json-i
+            known = [e for eps in self.by_station.values() for e in eps] + (self.err_sched.get("episodes") or [])
+            for m, desc in description_updates([m for m in self.meta_cache.values() if m], known, now):
+                m["description"] = desc
+                self.put_json(m["key"][:-4] + ".json", m)
+                log(f"kirjeldus uuendatud: {m['key']}")
             self.cleanup_at = now
         except Exception as e:
             log("koristuse viga:", e)
